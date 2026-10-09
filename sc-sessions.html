@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="89ers Perf">
+  <meta name="theme-color" content="#008348">
+  <link rel="apple-touch-icon" href="/icon-192.jpg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S&amp;C Sessions — Surrey 89ers Performance Hub</title>
+<link rel="stylesheet" href="/sc.css">
+<style>
+/* build and assign are full-width, like the S&C coach's design */
+body.focus .sidenav{display:none}
+body.focus .layout{display:block}
+body.focus .main{max-width:1440px;margin:0 auto}
+
+/* ---- list ---- */
+.group-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--offwhite-mid);display:flex;align-items:center;gap:7px;margin:22px 0 10px}
+.group-label::before{content:'';display:block;width:3px;height:12px;background:var(--green);border-radius:2px}
+.s-list{display:flex;flex-direction:column;gap:8px}
+.s-row{display:flex;align-items:center;gap:14px;padding:12px 14px;flex-wrap:wrap}
+.s-main{flex:1;min-width:200px;cursor:pointer;background:none;border:0;text-align:left;padding:0}
+.s-name{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600}
+.s-meta{font-size:12px;color:var(--offwhite-mid);margin-top:2px}
+.s-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* ---- step bar ---- */
+.stepbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:-6px 0 20px;padding-bottom:14px;border-bottom:1px solid var(--border-soft)}
+.stepbar-left,.stepbar-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.steps{display:flex;align-items:center;gap:10px;list-style:none;font-size:13px;font-weight:600;color:var(--offwhite-mid)}
+.steps li{display:flex;align-items:center;gap:8px}
+.steps .num{width:24px;height:24px;border-radius:50%;border:1px solid var(--field-border);display:flex;align-items:center;justify-content:center;font-size:12px}
+.steps .on{color:var(--offwhite);font-weight:700}
+.steps .on .num,.steps .done .num{background:var(--green);border-color:var(--green);color:#fff}
+.steps .bar{width:28px;height:1px;background:var(--field-border)}
+.save-state{font-size:12.5px;color:var(--offwhite-mid)}
+.save-state.dirty{color:var(--amber)}
+
+/* ---- build ---- */
+.name-label{font-size:11px;letter-spacing:2px;color:var(--offwhite-mid);font-weight:700;display:block;margin-bottom:6px}
+.name-input{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;color:var(--offwhite);background:transparent;border:0;border-bottom:1px dashed var(--field-border);padding:0 0 6px;width:100%;max-width:640px;outline:none}
+.name-input:focus{border-bottom-color:var(--green)}
+.details{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 20px}
+.details .field.w-date{width:180px}.details .field.w-time{width:140px}.details .field.w-loc{width:240px}.details .field.w-phase{width:290px}
+.est{height:40px;display:flex;align-items:center;padding:0 12px;border-radius:8px;background:var(--green-dim);color:var(--green-text);font-weight:700;font-family:'Space Grotesk',sans-serif;white-space:nowrap}
+
+.build{display:flex;gap:20px;align-items:flex-start}
+.lib{flex:none;width:320px;overflow:hidden}
+.lib-head{padding:14px 16px;border-bottom:1px solid var(--border-soft);display:flex;flex-direction:column;gap:12px}
+.lib-head-top{display:flex;justify-content:space-between;align-items:center}
+.lib-list{list-style:none;padding:6px;max-height:560px;overflow-y:auto}
+.lib-item{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 10px;border-bottom:1px solid rgba(250,249,246,0.04)}
+.lib-item:last-child{border-bottom:0}
+.lib-item-body{flex:1;min-width:0}
+.lib-item-name{font-weight:600}
+.lib-item-tags{font-size:12px;color:var(--offwhite-mid)}
+.lib-add{width:38px;height:38px;flex:none;border-radius:8px;border:1px solid var(--green);background:var(--green-dim);color:var(--green-text);font-size:20px;line-height:1;cursor:pointer}
+.lib-note{padding:10px 16px 14px;font-size:12px;color:var(--offwhite-mid)}
+
+.rows{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.xcard{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.xhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.xcode{min-width:38px;height:28px;padding:0 8px;border-radius:6px;background:var(--green-dim);color:var(--green-text);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif}
+.xname{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;flex:1;min-width:150px}
+.xhead .select{width:auto;height:36px}
+.xfields{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.xfields .field.w-num{width:74px}
+.xfields .times{height:40px;display:flex;align-items:center;color:var(--muted)}
+.seg{display:flex;padding:3px;border-radius:9px;background:var(--field);border:1px solid var(--field-border)}
+.seg button{min-height:32px;padding:0 12px;border-radius:6px;border:0;background:transparent;color:var(--offwhite-mid);font-size:13px;font-weight:600;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--green-dim);color:var(--offwhite)}
+.loadpair{display:flex;gap:6px}
+.loadpair .select{width:112px}.loadpair .input{width:78px}
+.timer-note{height:40px;display:inline-flex;align-items:center;padding:0 12px;border-radius:8px;background:rgba(96,200,250,0.1);color:var(--blue);font-size:12.5px;font-weight:600}
+.xmedia{display:flex;gap:16px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border-soft)}
+.xthumb{position:relative;width:176px;height:99px;flex:none;border-radius:8px;overflow:hidden;background:#050a07;border:1px solid var(--field-border)}
+.xthumb img{width:100%;height:100%;object-fit:cover}
+.xmedia-fields{flex:1;min-width:230px;display:flex;flex-direction:column;gap:6px}
+.add-row{min-height:56px;border-radius:12px;border:1px dashed var(--field-border);background:transparent;color:var(--offwhite-mid);font-weight:600;cursor:pointer}
+.summary-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px}
+.summary-bar strong{color:var(--offwhite)}
+.summary-bar .btns{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ---- assign ---- */
+.assign{display:flex;gap:20px;align-items:flex-start}
+.assign-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px}
+.sec{overflow:hidden}
+.sec-head{padding:14px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.sec-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.player{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--border-soft);cursor:pointer;min-height:48px}
+.player.on{background:rgba(0,131,72,0.12);border-color:var(--green)}
+.player input{width:18px;height:18px;accent-color:var(--green);flex:none}
+.player-name{font-weight:600;font-size:13px}
+.player-sub{font-size:11.5px;color:var(--offwhite-mid)}
+.rep-grid{display:flex;gap:12px;flex-wrap:wrap}
+.rep-table{width:100%;border-collapse:collapse;font-size:13px}
+.rep-table th{text-align:left;font-size:11px;color:var(--offwhite-mid);font-weight:600;padding:6px 10px 6px 0;border-bottom:1px solid var(--border-soft)}
+.rep-table td{padding:8px 10px 8px 0;border-bottom:1px solid var(--border-soft);vertical-align:top}
+.rep-wrap{overflow-x:auto}
+.side{flex:none;width:320px;padding:18px;display:flex;flex-direction:column;gap:14px;position:sticky;top:76px}
+.side-title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600}
+.side dl{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.side dl div{display:flex;justify-content:space-between;gap:10px}
+.side dt{color:var(--offwhite-mid)}.side dd{font-weight:600;text-align:right}
+.side .btn{min-height:46px}
+
+@media (max-width:1000px){
+  .build,.assign{flex-direction:column}
+  .lib,.side{width:100%;position:static}
+  .lib-list{max-height:260px}
+}
+@media (max-width:560px){
+  .name-input{font-size:21px}
+  .details .field{width:100% !important}
+  .xthumb{width:100%;height:auto;aspect-ratio:16/9}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <img class="topbar-logo" src="/icon-192.jpg" alt="89ers">
+    <div><div class="topbar-title">Surrey 89ers</div><div class="topbar-sub">Performance Hub · 2026-27</div></div>
+  </div>
+  <div class="topbar-actions"><button class="btn btn-sm" onclick="SC.logout()">Sign out</button></div>
+</div>
+<div class="layout">
+  <div class="sidenav"></div>
+  <div class="main">
+    <div id="banners"></div>
+    <div id="view"></div>
+  </div>
+</div>
+
+<script src="/sc.js"></script>
+<script src="/hub.js"></script>
+<script>
+(function(){
+if(!window.SC) return;               // not signed in: sc.js is already redirecting
+const el = SC.el, $ = id => document.getElementById(id);
+const LOADS = [["pct","% 1RM"],["kg","kg"],["rpe","RPE"],["bw","Bodyweight"]];
+const RULES = [["same","Keep the same"],["kg","+2.5 kg each week"],["pct","+5% each week"],["hand","Set each week by hand (later weeks saved as drafts)"]];
+const GROUPS = [["G","Guards"],["F","Forwards"],["B","Bigs"]];
+
+let LIBRARY = [], LIB_BY_ID = {}, SESSIONS = [], ROWS = {}, ROSTER = [], LIVE = false;
+let view = "list";
+let S = null;                        // the session being edited
+let dirty = false, savedAt = "";
+let q = "", cat = "All";
+let showAllPast = false;
+let notice = null;                   // {kind, text} shown once at the top
+
+/* ---------- data ---------- */
+
+async function loadAll(){
+  const [ex, ses, rows, roster, live] = await Promise.all([
+    SC.readTab("EXERCISES"), SC.readTab("SESSIONS"), SC.readTab("SESSION EXERCISES"),
+    SC.loadRoster().catch(e => { console.error(e); return []; }), SC.saveIsLive()
+  ]);
+  LIVE = live; ROSTER = roster;
+  LIBRARY = ex.rows.filter(x => !SC.isTrue(x.archived)).sort((a,b) => a.name.localeCompare(b.name,"en",{sensitivity:"base"}));
+  LIB_BY_ID = {}; ex.rows.forEach(x => LIB_BY_ID[x.exercise_id] = x);
+  SESSIONS = ses.rows.filter(s => !SC.isTrue(s.archived));
+  ROWS = {};
+  rows.rows.forEach(r => (ROWS[r.session_id] = ROWS[r.session_id] || []).push(r));
+  Object.keys(ROWS).forEach(k => ROWS[k].sort((a,b) => Number(a.order) - Number(b.order)));
+}
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+/* A session row as the builder holds it. Video and cues come from the
+   library unless this session has its own. */
+function rowFromLibrary(x, block){
+  return { uid:uid(), exercise_id:x.exercise_id, exercise:x.name, block:block,
+    measure:x.measure === "time" ? "time" : "reps", sets:x.sets || "3", amount:x.amount || "5",
+    each_side:SC.isTrue(x.each_side), load_type:x.load_type || "bw", load:x.load || "",
+    rest_s:x.rest_s || "60", video_url:x.video_url || "", cues:x.cues || "" };
+}
+function rowFromSaved(r){
+  const lib = LIB_BY_ID[r.exercise_id] || {};
+  return { uid:uid(), exercise_id:r.exercise_id, exercise:(lib.name && !SC.isTrue(lib.archived)) ? lib.name : r.exercise,
+    block:r.block || "A", measure:r.measure === "time" ? "time" : "reps", sets:r.sets, amount:r.amount,
+    each_side:SC.isTrue(r.each_side), load_type:r.load_type || "bw", load:r.load, rest_s:r.rest_s,
+    video_url:r.video_url || lib.video_url || "", cues:r.cues || lib.cues || "" };
+}
+/* What is sent to be saved. Video and cues are left blank when they
+   match the library, so a later change in the library still reaches
+   this session. */
+function rowToSave(r){
+  const lib = LIB_BY_ID[r.exercise_id] || {};
+  return { block:r.block, exercise_id:r.exercise_id, exercise:r.exercise, measure:r.measure,
+    sets:r.sets, amount:r.amount, each_side:r.each_side, load_type:r.load_type,
+    load:r.load_type === "bw" ? "" : r.load, rest_s:r.rest_s,
+    video_url:(r.video_url || "").trim() === (lib.video_url || "") ? "" : (r.video_url || "").trim(),
+    cues:(r.cues || "").trim() === (lib.cues || "") ? "" : (r.cues || "").trim() };
+}
+
+function blankSession(){
+  return { session_id:"", name:"", date:"", start_time:"", location:SC.LOCATIONS[0], phase:"",
+    status:"draft", assign_mode:"squad", groups:{G:true,F:true,B:true}, picked:{}, series_id:"",
+    rows:[], repeat:false, until:"", rule:"same" };
+}
+function sessionFromSaved(s, asNew){
+  const out = blankSession();
+  Object.assign(out, { session_id:asNew ? "" : s.session_id, name:s.name, date:asNew ? "" : s.date,
+    start_time:asNew ? "" : s.start_time, location:s.location || SC.LOCATIONS[0], phase:s.phase,
+    status:asNew ? "draft" : s.status, assign_mode:asNew ? "squad" : (s.assign_mode || "squad"),
+    series_id:asNew ? "" : s.series_id });
+  out.rows = (ROWS[s.session_id] || []).map(rowFromSaved);
+  const saved = (s.players || "").split(",").filter(Boolean);
+  if(!asNew && saved.length){
+    saved.forEach(p => out.picked[p] = true);
+    if(out.assign_mode === "groups"){
+      GROUPS.forEach(g => out.groups[g[0]] = ROSTER.some(p => p.group === g[0] && out.picked[p.slug]));
+    }
+  }
+  return out;
+}
+
+function playerOn(p){
+  if(S.assign_mode === "squad") return true;
+  if(S.assign_mode === "groups") return !!S.groups[p.group];
+  return !!S.picked[p.slug];
+}
+function selectedSlugs(){ return ROSTER.filter(playerOn).map(p => p.slug); }
+
+function codes(){
+  const c = {}; return S.rows.map(r => { c[r.block] = (c[r.block] || 0) + 1; return r.block + c[r.block]; });
+}
+function totals(){
+  let sets = 0, vids = 0;
+  S.rows.forEach(r => { sets += Number(r.sets) || 0; if(SC.isYT(r.video_url)) vids++; });
+  return { count:S.rows.length, sets:sets, vids:vids, est:SC.estMinutes(S.rows.map(r => Object.assign({}, r))) };
+}
+
+/* ---------- repeat and progression ---------- */
+
+function repeatDates(){
+  const first = SC.parseDate(S.date), last = SC.parseDate(S.until), out = [];
+  if(!first) return out;
+  out.push(S.date);
+  if(!S.repeat || !last) return out;
+  for(let i = 1; i <= 11; i++){
+    const d = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 7 * i);
+    if(d > last) break;
+    out.push(SC.isoDate(d));
+  }
+  return out;
+}
+function half(n){ return Math.round(n * 2) / 2; }
+function tidy(n){ return String(Number(n.toFixed(2))); }
+/* The load for week k (0 = as built). Only A-block lifts progress. */
+function progressed(r, k){
+  if(!k || r.block !== "A" || !/^\d+(\.\d+)?$/.test(String(r.load).trim())) return r.load;
+  const base = parseFloat(r.load);
+  if(S.rule === "kg" && r.load_type === "kg") return tidy(base + 2.5 * k);
+  if(S.rule === "pct" && r.load_type === "kg") return tidy(half(base * Math.pow(1.05, k)));
+  if(S.rule === "pct" && r.load_type === "pct") return tidy(Math.round(base * Math.pow(1.05, k)));
+  return r.load;
+}
+
+/* ---------- saving ---------- */
+
+function payloadFor(status, date, k, id){
+  return { session_id:id, name:S.name.trim(), date:date, start_time:S.start_time, location:S.location,
+    phase:S.phase.trim(), status:status, assign_mode:S.assign_mode, players:selectedSlugs(),
+    est_min:totals().est, series_id:S.series_id, archived:false,
+    exercises:S.rows.map(r => Object.assign(rowToSave(r), { load:r.load_type === "bw" ? "" : progressed(r, k) })) };
+}
+
+function problems(status){
+  if(!S.name.trim()) return "Give the session a name.";
+  const bad = S.rows.find(r => r.video_url.trim() && !SC.isYT(r.video_url));
+  if(bad) return "The video link on " + bad.exercise + " is not a YouTube link.";
+  if(status === "published"){
+    if(!S.date) return "Pick a date before publishing.";
+    if(!S.rows.length) return "Add at least one exercise before publishing.";
+    if(!selectedSlugs().length) return "Pick at least one player before publishing.";
+    if(S.repeat && !SC.parseDate(S.until)) return "Pick the date the weekly repeat runs until.";
+  }
+  return "";
+}
+
+async function save(status, btn){
+  const msg = problems(status);
+  if(msg){ flash("err", msg); return false; }
+  const dates = status === "template" ? [""] : (S.repeat ? repeatDates() : [S.date]);
+  if(dates.length > 1 && !S.series_id) S.series_id = "se_" + uid();
+  const list = dates.map((d, k) => {
+    const st = (k > 0 && S.rule === "hand" && status === "published") ? "draft" : status;
+    return payloadFor(st, d, k, k === 0 && status !== "template" ? S.session_id : "");
+  });
+  const label = btn.textContent; btn.disabled = true; btn.textContent = "Saving…";
+  try{
+    const out = await SC.post("sc_sessions_save", {sessions:list});
+    await loadAll();
+    if(status === "template"){
+      flash("ok", "Saved as a template. It is in the Templates list.");
+    }else{
+      S.session_id = out.session_ids[0]; S.status = status; S.repeat = false;
+      dirty = false; savedAt = new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+      const n = selectedSlugs().length, extra = dates.length > 1 ? " " + dates.length + " sessions created." : "";
+      flash("ok", status === "published"
+        ? "Published to " + n + (n === 1 ? " player." : " players.") + extra + " Player portals still show the old programme until they are switched over."
+        : "Draft saved." + extra);
+    }
+    render();
+    return true;
+  }catch(e){
+    flash("err", "Couldn't save: " + e.message);
+    btn.disabled = false; btn.textContent = label;
+    return false;
+  }
+}
+
+async function archive(s, btn){
+  if(btn.dataset.armed !== "1"){ btn.dataset.armed = "1"; btn.textContent = "Tap again to remove"; return; }
+  btn.disabled = true; btn.textContent = "Removing…";
+  try{
+    await SC.post("sc_sessions_save", {sessions:[{ session_id:s.session_id, name:s.name, date:s.date, start_time:s.start_time,
+      location:s.location, phase:s.phase, status:"draft", assign_mode:s.assign_mode, players:s.players,
+      est_min:s.est_min, series_id:s.series_id, archived:true,
+      exercises:(ROWS[s.session_id] || []).map(r => Object.assign({}, r, {each_side:SC.isTrue(r.each_side)})) }]});
+    await loadAll(); flash("ok", "Removed “" + s.name + "”."); render();
+  }catch(e){ flash("err", "Couldn't remove it: " + e.message); render(); }
+}
+
+function flash(kind, text){ notice = {kind:kind, text:text}; banners(); window.scrollTo({top:0, behavior:"smooth"}); }
+function touch(){ dirty = true; const s = $("save-state"); if(s){ s.textContent = "Unsaved changes"; s.className = "save-state dirty"; } }
+
+/* ---------- shared bits ---------- */
+
+function banners(){
+  const b = $("banners"); b.textContent = "";
+  if(!LIVE) b.appendChild(el("div",{class:"banner warn",text:"Saving is not switched on yet. The endpoint needs its S&C update deployed, so you can build a session to try it but it will not save."}));
+  if(notice) b.appendChild(el("div",{class:"banner " + notice.kind, role:"status", text:notice.text}));
+}
+
+function go(v){ view = v; notice = null; render(); window.scrollTo(0,0); }
+function leaveToList(){
+  if(dirty && !confirm("This session has unsaved changes. Leave without saving?")) return;
+  S = null; dirty = false; savedAt = ""; go("list");
+}
+
+function render(){
+  document.body.classList.toggle("focus", view !== "list");
+  banners();
+  const v = $("view"); v.textContent = "";
+  if(view === "list") renderList(v);
+  else if(view === "build") renderBuild(v);
+  else renderAssign(v);
+}
+
+function stepbar(step){
+  const state = dirty ? "Unsaved changes" : (savedAt ? "Saved " + savedAt : (S.session_id ? "" : "Not saved yet"));
+  const right = [ el("span",{id:"save-state",class:"save-state" + (dirty ? " dirty" : ""),text:state}) ];
+  if(step === 1){
+    right.push(el("button",{class:"btn",type:"button",disabled:!LIVE,text:S.status === "published" ? "Save changes" : "Save draft",
+      onclick:e => save(S.status === "published" ? "published" : "draft", e.currentTarget)}));
+    right.push(el("button",{class:"btn btn-primary",type:"button",text:"Next: Assign →",onclick:()=>go("assign")}));
+  }
+  return el("div",{class:"stepbar"},[
+    el("div",{class:"stepbar-left"},[
+      step === 1 ? el("button",{class:"btn",type:"button",text:"← Sessions",onclick:leaveToList})
+                 : el("button",{class:"btn",type:"button",text:"← Back to build",onclick:()=>go("build")}),
+      el("ol",{class:"steps","aria-label":"Steps"},[
+        el("li",{class:step === 1 ? "on" : "done"},[ el("span",{class:"num",text:step === 1 ? "1" : "✓"}), "Build" ]),
+        el("li",{class:"bar","aria-hidden":"true"}),
+        el("li",{class:step === 2 ? "on" : ""},[ el("span",{class:"num",text:"2"}), "Assign & publish" ])
+      ])
+    ]),
+    el("div",{class:"stepbar-right"}, right)
+  ]);
+}
+
+/* ---------- list ---------- */
+
+function sessionLine(s){
+  const n = (ROWS[s.session_id] || []).length;
+  const bits = [];
+  if(s.date) bits.push(SC.prettyDate(s.date, true) + (s.start_time ? " · " + s.start_time : ""));
+  if(s.location && s.status !== "template") bits.push(s.location);
+  if(s.phase) bits.push(s.phase);
+  bits.push(n + (n === 1 ? " exercise" : " exercises") + (s.est_min ? " · ~" + s.est_min + " min" : ""));
+  if(s.status === "published"){ const p = (s.players || "").split(",").filter(Boolean).length; bits.push(p + (p === 1 ? " player" : " players")); }
+  return bits.join("  ·  ");
+}
+
+function renderList(v){
+  v.appendChild(el("div",{class:"page-head"},[
+    el("div",{},[
+      el("div",{class:"page-title",text:"S&C sessions"}),
+      el("div",{class:"page-sub",text:"Build a session from the exercise library, then choose who does it and when."})
+    ]),
+    el("button",{class:"btn btn-primary",type:"button",text:"+ New session",onclick:()=>{ S = blankSession(); dirty = false; savedAt = ""; go("build"); }})
+  ]));
+
+  const today = SC.isoDate(new Date());
+  const by = (a,b) => (a.date + a.start_time).localeCompare(b.date + b.start_time);
+  const upcoming = SESSIONS.filter(s => s.status === "published" && s.date >= today).sort(by);
+  const drafts = SESSIONS.filter(s => s.status === "draft").sort(by);
+  const templates = SESSIONS.filter(s => s.status === "template").sort((a,b) => a.name.localeCompare(b.name));
+  const past = SESSIONS.filter(s => s.status === "published" && s.date < today).sort(by).reverse();
+
+  if(!SESSIONS.length){
+    v.appendChild(el("div",{class:"empty"},[
+      "No sessions yet. Start with “New session”. ",
+      LIBRARY.length ? "" : el("span",{},["The exercise library is empty too: ", el("a",{href:"sc-library.html",text:"add exercises or import the current programme"}), " first."])
+    ]));
+    return;
+  }
+
+  function group(title, list, empty){
+    v.appendChild(el("div",{class:"group-label",text:title + " (" + list.length + ")"}));
+    if(!list.length){ v.appendChild(el("div",{class:"hint",text:empty})); return; }
+    const wrap = el("div",{class:"s-list"});
+    list.forEach(s => {
+      const open = () => { S = sessionFromSaved(s, false); dirty = false; savedAt = ""; go("build"); };
+      const copy = () => { S = sessionFromSaved(s, true); if(s.status !== "template") S.name = s.name + " (copy)"; dirty = true; savedAt = ""; go("build"); };
+      wrap.appendChild(el("div",{class:"card s-row"},[
+        el("button",{class:"s-main",type:"button",onclick:s.status === "template" ? copy : open},[
+          el("div",{class:"s-name",text:s.name}),
+          el("div",{class:"s-meta",text:sessionLine(s)})
+        ]),
+        el("div",{class:"s-actions"},[
+          el("span",{class:"status status-" + s.status,text:s.status}),
+          s.status === "template"
+            ? el("button",{class:"btn btn-sm btn-primary",type:"button",text:"Use",onclick:copy})
+            : el("button",{class:"btn btn-sm",type:"button",text:"Duplicate",onclick:copy}),
+          el("button",{class:"btn btn-sm",type:"button",text:"Edit",onclick:open}),
+          el("button",{class:"btn btn-sm btn-ghost btn-danger",type:"button",disabled:!LIVE,text:"Remove",onclick:e => archive(s, e.currentTarget)})
+        ])
+      ]));
+    });
+    v.appendChild(wrap);
+  }
+  group("Upcoming", upcoming, "Nothing published for today or later.");
+  group("Drafts", drafts, "No drafts.");
+  group("Templates", templates, "No templates. Save any session as a template from the builder.");
+  if(past.length){
+    group("Past", showAllPast ? past : past.slice(0, 8), "");
+    if(past.length > 8 && !showAllPast) v.appendChild(el("button",{class:"btn btn-sm",type:"button",style:"margin-top:10px",text:"Show all " + past.length,onclick:()=>{ showAllPast = true; render(); }}));
+  }
+}
+
+/* ---------- build ---------- */
+
+function field(label, input, cls){
+  const id = input.id || ("f-" + uid()); input.id = id;
+  return el("div",{class:"field " + (cls || "")},[ el("label",{for:id,text:label}), input ]);
+}
+
+function renderBuild(v){
+  v.appendChild(stepbar(1));
+
+  const phases = Array.from(new Set(SESSIONS.map(s => s.phase).filter(Boolean))).sort();
+  const loc = el("select",{class:"select",onchange:e => { S.location = e.target.value; touch(); }},
+    Array.from(new Set(SC.LOCATIONS.concat(S.location ? [S.location] : []))).map(l => el("option",{value:l,text:l})));
+  loc.value = S.location;
+
+  v.appendChild(el("section",{"aria-label":"Session details"},[
+    el("label",{class:"name-label",for:"s-name",text:"SESSION NAME"}),
+    el("input",{class:"name-input",id:"s-name",type:"text",maxlength:"120",placeholder:"e.g. Midweek · Lower + isometrics",value:S.name,
+      oninput:e => { S.name = e.target.value; touch(); }}),
+    el("div",{class:"details"},[
+      field("Date", el("input",{class:"input",type:"date",value:S.date,oninput:e => { S.date = e.target.value; touch(); }}), "w-date"),
+      field("Start", el("input",{class:"input",type:"time",value:S.start_time,oninput:e => { S.start_time = e.target.value; touch(); }}), "w-time"),
+      field("Location", loc, "w-loc"),
+      field("Phase", el("input",{class:"input",type:"text",list:"phase-list",maxlength:"80",placeholder:"e.g. Phase 3 · In-season strength",value:S.phase,
+        oninput:e => { S.phase = e.target.value; touch(); }}), "w-phase"),
+      el("datalist",{id:"phase-list"}, phases.map(p => el("option",{value:p}))),
+      el("div",{class:"field"},[ el("span",{class:"lbl",text:"Estimated length"}), el("span",{class:"est",id:"est",text:""}) ])
+    ])
+  ]));
+
+  const libList = el("ul",{class:"lib-list",id:"lib-list"});
+  const rows = el("section",{class:"rows",id:"rows","aria-label":"Exercises in this session"});
+  v.appendChild(el("div",{class:"build"},[
+    el("aside",{class:"card lib","aria-labelledby":"lib-h"},[
+      el("div",{class:"lib-head"},[
+        el("div",{class:"lib-head-top"},[
+          el("h2",{class:"card-title",id:"lib-h",text:"Exercise library"}),
+          el("a",{href:"sc-library.html",style:"font-size:13px;font-weight:600;text-decoration:none",text:"Manage",
+            onclick:e => { if(dirty && !confirm("This session has unsaved changes. Leave without saving?")) e.preventDefault(); else dirty = false; }})
+        ]),
+        el("input",{class:"input",id:"lib-search",type:"search","aria-label":"Search exercises",
+          placeholder:"Search " + LIBRARY.length + (LIBRARY.length === 1 ? " exercise" : " exercises"),value:q,
+          oninput:e => { q = e.target.value; renderLib(); }}),
+        el("div",{class:"chip-row",id:"lib-cats",role:"group","aria-label":"Filter by type"})
+      ]),
+      libList,
+      el("p",{class:"lib-note",text:"Videos and cues saved in the library attach automatically when you add an exercise."})
+    ]),
+    rows
+  ]));
+  renderLib(); renderRows();
+}
+
+function renderLib(){
+  const cw = $("lib-cats"); cw.textContent = "";
+  ["All"].concat(SC.TYPES).forEach(c => cw.appendChild(el("button",{class:"chip",type:"button",style:"min-height:30px;padding:0 10px;font-size:12px",
+    "aria-pressed":String(c === cat),text:c,onclick:()=>{ cat = c; renderLib(); }})));
+  const list = $("lib-list"); list.textContent = "";
+  const needle = q.trim().toLowerCase();
+  const found = LIBRARY.filter(l => (cat === "All" || l.type === cat) && (!needle || l.name.toLowerCase().indexOf(needle) >= 0));
+  if(!LIBRARY.length){
+    list.appendChild(el("li",{class:"lib-note"},["The library is empty. ", el("a",{href:"sc-library.html",text:"Add exercises"}), " first, then build the session."]));
+    return;
+  }
+  if(!found.length) list.appendChild(el("li",{class:"lib-note",text:"No exercise matches. Add it in the library first."}));
+  found.forEach(l => {
+    const has = SC.isYT(l.video_url);
+    list.appendChild(el("li",{class:"lib-item"},[
+      el("div",{class:"lib-item-body"},[
+        el("div",{class:"lib-item-name",text:l.name}),
+        el("div",{class:"lib-item-tags"},[ ([l.type, l.tags].filter(Boolean).join(" · ") || "No type set") + "  ",
+          el("span",{style:"font-weight:600;color:" + (has ? "var(--green-text)" : "var(--amber)"),text:has ? "· Video" : "· No video"}) ])
+      ]),
+      el("button",{class:"lib-add",type:"button","aria-label":"Add " + l.name + " to session",text:"+",onclick:()=>{
+        const last = S.rows.length ? S.rows[S.rows.length - 1].block : "A";
+        S.rows.push(rowFromLibrary(l, last)); touch(); renderRows();
+      }})
+    ]));
+  });
+}
+
+function videoState(r){
+  const v = (r.video_url || "").trim();
+  if(!v) return ["warn","No video yet — players will only see the name"];
+  if(SC.isYT(v)) return ["ok","Video attached · shows above the player's log"];
+  return ["err","That doesn't look like a YouTube link"];
+}
+
+function renderRows(){
+  const wrap = $("rows"); wrap.textContent = "";
+  const cs = codes();
+  S.rows.forEach((r, i) => {
+    const isTime = r.measure === "time";
+    const set = (k, val, redraw) => { r[k] = val; touch(); if(redraw) renderRows(); else updateDerived(); };
+    const block = el("select",{class:"select","aria-label":"Block",onchange:e => set("block", e.target.value, true)},
+      ["A","B","C","D"].map(b => el("option",{value:b,text:b})));
+    block.value = r.block;
+    const loadType = el("select",{class:"select","aria-label":"Load type",onchange:e => set("load_type", e.target.value, true)},
+      LOADS.map(l => el("option",{value:l[0],text:l[1]})));
+    loadType.value = r.load_type;
+    const vs = videoState(r);
+    const vmsg = el("span",{class:"hint " + vs[0],text:vs[1]});
+    const thumbWrap = el("div",{class:"xthumb",hidden:!SC.ytThumb(r.video_url)},[ el("img",{src:SC.ytThumb(r.video_url) || "",alt:""}) ]);
+
+    wrap.appendChild(el("article",{class:"card xcard"},[
+      el("div",{class:"xhead"},[
+        el("button",{class:"btn btn-icon btn-sm",type:"button","aria-label":"Move " + r.exercise + " up",disabled:i === 0,text:"↑",
+          onclick:()=>{ S.rows.splice(i - 1, 0, S.rows.splice(i, 1)[0]); touch(); renderRows(); }}),
+        el("button",{class:"btn btn-icon btn-sm",type:"button","aria-label":"Move " + r.exercise + " down",disabled:i === S.rows.length - 1,text:"↓",
+          onclick:()=>{ S.rows.splice(i + 1, 0, S.rows.splice(i, 1)[0]); touch(); renderRows(); }}),
+        el("span",{class:"xcode",text:cs[i]}),
+        el("h3",{class:"xname",text:r.exercise}),
+        el("span",{class:"hint",text:"Block"}), block,
+        el("button",{class:"btn btn-icon btn-sm btn-ghost",type:"button","aria-label":"Remove " + r.exercise,text:"✕",
+          onclick:()=>{ S.rows.splice(i, 1); touch(); renderRows(); }})
+      ]),
+      el("div",{class:"xfields"},[
+        el("div",{class:"field"},[ el("span",{class:"lbl",text:"Measured by"}),
+          el("div",{class:"seg",role:"group","aria-label":"Measured by"},[
+            el("button",{type:"button","aria-pressed":String(!isTime),text:"Reps",onclick:()=>set("measure","reps",true)}),
+            el("button",{type:"button","aria-pressed":String(isTime),text:"Time",onclick:()=>set("measure","time",true)})
+          ]) ]),
+        field("Sets", el("input",{class:"input mono",type:"number",min:"1",inputmode:"numeric",value:r.sets,oninput:e => set("sets", e.target.value)}), "w-num"),
+        el("span",{class:"times","aria-hidden":"true",text:"×"}),
+        field(isTime ? "Seconds" : "Reps", el("input",{class:"input mono",type:"number",min:"1",inputmode:"numeric",value:r.amount,
+          oninput:e => { set("amount", e.target.value); const t = wrap.querySelector('[data-timer="' + r.uid + '"]'); if(t) t.textContent = "Players get a " + (e.target.value || 0) + " s timer"; }}), "w-num"),
+        el("label",{class:"check"},[ el("input",{type:"checkbox",checked:r.each_side,onchange:e => set("each_side", e.target.checked)}), "Each side" ]),
+        el("div",{class:"field"},[ el("span",{class:"lbl",text:"Load"}),
+          el("div",{class:"loadpair"},[ loadType,
+            r.load_type === "bw" ? null : el("input",{class:"input mono",type:"text",inputmode:"decimal","aria-label":"Load value",maxlength:"20",value:r.load,oninput:e => set("load", e.target.value)}) ]) ]),
+        field("Rest (s)", el("input",{class:"input mono",type:"number",min:"0",step:"15",inputmode:"numeric",value:r.rest_s,oninput:e => set("rest_s", e.target.value)}), "w-num"),
+        isTime ? el("span",{class:"timer-note","data-timer":r.uid,text:"Players get a " + (r.amount || 0) + " s timer"}) : null
+      ]),
+      el("div",{class:"xmedia"},[
+        thumbWrap,
+        el("div",{class:"xmedia-fields"},[
+          field("Demo video — paste a YouTube link", el("input",{class:"input",type:"url",placeholder:"https://youtu.be/…",maxlength:"300",value:r.video_url,
+            oninput:e => { r.video_url = e.target.value; touch(); const s = videoState(r); vmsg.className = "hint " + s[0]; vmsg.textContent = s[1];
+              const t = SC.ytThumb(r.video_url); thumbWrap.hidden = !t; if(t) thumbWrap.firstChild.src = t; updateDerived(); }})),
+          vmsg,
+          field("Coaching cues (shown under the video)", el("textarea",{class:"textarea",rows:"2",maxlength:"1000",placeholder:"e.g. Chest tall, push the floor away",value:r.cues,
+            oninput:e => { r.cues = e.target.value; touch(); }}))
+        ])
+      ])
+    ]));
+  });
+
+  if(!S.rows.length) wrap.appendChild(el("div",{class:"empty",text:"No exercises yet. Add them from the library with the + buttons."}));
+  wrap.appendChild(el("button",{class:"add-row",type:"button",text:"+ Add exercise — pick from the library",
+    onclick:()=>{ const s = $("lib-search"); s.scrollIntoView({behavior:"smooth",block:"center"}); s.focus(); }}));
+  wrap.appendChild(el("div",{class:"card summary-bar"},[
+    el("span",{id:"summary"}),
+    el("div",{class:"btns"},[
+      el("button",{class:"btn",type:"button",disabled:!LIVE,text:"Save as template",onclick:e => save("template", e.currentTarget)}),
+      el("button",{class:"btn btn-primary",type:"button",text:"Next: Assign →",onclick:()=>go("assign")})
+    ])
+  ]));
+  updateDerived();
+}
+
+function updateDerived(){
+  const t = totals();
+  const est = $("est"); if(est) est.textContent = t.est + " min";
+  const s = $("summary"); if(!s) return;
+  s.textContent = "";
+  const missing = t.count - t.vids;
+  [ el("strong",{text:String(t.count)}), t.count === 1 ? " exercise · " : " exercises · ", el("strong",{text:String(t.sets)}), " sets · ~" + t.est + " min · ",
+    el("span",{style:"font-weight:600;color:" + (missing === 0 && t.count ? "var(--green-text)" : "var(--amber)"),
+      text:!t.count ? "no exercises yet" : (missing === 0 ? "all videos attached" : t.vids + " of " + t.count + " videos attached")})
+  ].forEach(n => s.appendChild(typeof n === "string" ? document.createTextNode(n) : n));
+}
+
+/* ---------- assign ---------- */
+
+function renderAssign(v){
+  v.appendChild(stepbar(2));
+  const t = totals();
+  const when = [S.name.trim() || "Untitled session", S.date ? SC.prettyDate(S.date, true) : "no date yet", S.start_time].filter(Boolean).join(" · ");
+  v.appendChild(el("div",{style:"margin-bottom:18px"},[
+    el("div",{class:"page-title",text:"Who's doing it, and when?"}),
+    el("div",{class:"page-sub",text:when})
+  ]));
+
+  const slugs = selectedSlugs();
+  const modes = [["squad","Whole squad"],["groups","By position"],["pick","Pick players"]];
+  const setMode = m => {
+    if(m === "pick"){ const p = {}; ROSTER.forEach(x => p[x.slug] = playerOn(x)); S.picked = p; }
+    S.assign_mode = m; touch(); render();
+  };
+
+  const playersSec = el("section",{class:"card sec","aria-labelledby":"who-h"},[
+    el("div",{class:"sec-head"},[
+      el("h2",{class:"card-title",id:"who-h",text:"Players"}),
+      el("div",{class:"seg",role:"group","aria-label":"Assign to"}, modes.map(m =>
+        el("button",{type:"button","aria-pressed":String(S.assign_mode === m[0]),text:m[1],onclick:()=>setMode(m[0])})))
+    ]),
+    el("div",{class:"sec-body"},[
+      S.assign_mode === "groups" ? el("div",{class:"chip-row",role:"group","aria-label":"Position groups"}, GROUPS.map(g =>
+        el("button",{class:"chip",type:"button","aria-pressed":String(!!S.groups[g[0]]),
+          text:g[1] + " · " + ROSTER.filter(p => p.group === g[0]).length,
+          onclick:()=>{ S.groups[g[0]] = !S.groups[g[0]]; touch(); render(); }}))) : null,
+      ROSTER.length ? el("div",{class:"players"}, ROSTER.map(p => {
+        const on = playerOn(p);
+        return el("label",{class:"player" + (on ? " on" : "")},[
+          el("input",{type:"checkbox",checked:on,onchange:()=>{
+            const pk = {}; ROSTER.forEach(x => pk[x.slug] = playerOn(x)); pk[p.slug] = !on;
+            S.picked = pk; S.assign_mode = "pick"; touch(); render(); }}),
+          el("span",{},[ el("div",{class:"player-name",text:p.name}),
+            el("div",{class:"player-sub",text:[p.pos, p.num !== "" ? "#" + p.num : ""].filter(Boolean).join(" · ")}) ])
+        ]);
+      })) : el("div",{class:"hint err",text:"The squad list could not be read from ROSTER, so players cannot be picked right now."})
+    ])
+  ]);
+
+  const dates = repeatDates();
+  const aLifts = S.rows.map((r, i) => ({r:r, code:codes()[i]})).filter(x => x.r.block === "A");
+  const rule = el("select",{class:"select",id:"rule",onchange:e => { S.rule = e.target.value; touch(); render(); }},
+    RULES.map(r => el("option",{value:r[0],text:r[1]})));
+  rule.value = S.rule;
+  const loadCell = k => aLifts.length ? aLifts.map(x => {
+      const copy = Object.assign({}, x.r, {load:progressed(x.r, k)});
+      return x.code + " " + x.r.exercise + " · " + (SC.loadText(copy) || "no load set");
+    }).join("   |   ") : "No A-block lifts in this session";
+
+  const repeatSec = el("section",{class:"card sec","aria-labelledby":"rep-h"},[
+    el("div",{class:"sec-head"},[
+      el("h2",{class:"card-title",id:"rep-h",text:"Repeat & progress"}),
+      el("label",{class:"check"},[ el("input",{type:"checkbox",checked:S.repeat,onchange:e => {
+        S.repeat = e.target.checked;
+        if(S.repeat && !S.until && SC.parseDate(S.date)){ const d = SC.parseDate(S.date); d.setDate(d.getDate() + 21); S.until = SC.isoDate(d); }
+        touch(); render(); }}), "Repeat weekly" ])
+    ]),
+    S.repeat ? el("div",{class:"sec-body"},[
+      !S.date ? el("div",{class:"hint warn",text:"Set the session's date on the build step first."}) : null,
+      el("div",{class:"rep-grid"},[
+        field("Until", el("input",{class:"input",type:"date",value:S.until,min:S.date,onchange:e => { S.until = e.target.value; touch(); render(); }}), "w-date"),
+        el("div",{class:"field",style:"flex:1;min-width:240px"},[ el("label",{for:"rule",text:"Progression on A-block lifts"}), rule ])
+      ]),
+      el("div",{class:"rep-wrap"},[ el("table",{class:"rep-table"},[
+        el("thead",{},[ el("tr",{},[ el("th",{text:"Date"}), el("th",{text:"A-block loads"}), el("th",{text:"Saved as"}) ]) ]),
+        el("tbody",{}, dates.map((d, k) => el("tr",{},[
+          el("td",{style:"white-space:nowrap",text:SC.prettyDate(d)}),
+          el("td",{text:loadCell(k)}),
+          el("td",{text:k > 0 && S.rule === "hand" ? "Draft" : (k === 0 ? "This session" : "Same as this session")})
+        ])))
+      ]) ]),
+      el("div",{class:"hint",text:"Each week is saved as its own session, so you can still change any one of them. Only loads typed as a plain number in kg or % progress. A deload week is not automatic yet: edit that week's session by hand."})
+    ]) : null
+  ]);
+
+  const noVid = S.rows.filter(r => !SC.isYT(r.video_url));
+  const side = el("aside",{class:"card side","aria-label":"Summary"},[
+    el("span",{class:"card-title",text:"Summary"}),
+    el("div",{},[
+      el("div",{class:"side-title",text:S.name.trim() || "Untitled session"}),
+      el("div",{class:"hint",text:[S.date ? SC.prettyDate(S.date) : "No date yet", S.start_time, S.location].filter(Boolean).join(" · ")})
+    ]),
+    el("dl",{},[
+      el("div",{},[ el("dt",{text:"Exercises"}), el("dd",{text:t.count + " · " + t.sets + " sets · ~" + t.est + " min"}) ]),
+      el("div",{},[ el("dt",{text:"Players"}), el("dd",{text:slugs.length + " of " + ROSTER.length}) ]),
+      el("div",{},[ el("dt",{text:"Sessions created"}), el("dd",{text:String(Math.max(dates.length, 1))}) ])
+    ]),
+    noVid.length ? el("div",{class:"hint warn",text:noVid.length === 1 ? noVid[0].exercise + " has no video." : noVid.length + " exercises have no video."}) : null,
+    el("button",{class:"btn btn-primary",type:"button",disabled:!LIVE,
+      text:"Publish to " + slugs.length + (slugs.length === 1 ? " player" : " players"),onclick:e => save("published", e.currentTarget)}),
+    el("button",{class:"btn",type:"button",disabled:!LIVE,text:S.status === "published" ? "Unpublish and keep as draft" : "Save as draft",
+      onclick:e => save("draft", e.currentTarget)}),
+    el("span",{class:"hint",text:"Publishing saves the session as published on the Strength Program sheet. Player portals still show the old programme until they are switched over to these sessions."})
+  ]);
+
+  v.appendChild(el("div",{class:"assign"},[ el("div",{class:"assign-main"},[ playersSec, repeatSec ]), side ]));
+}
+
+window.addEventListener("beforeunload", e => { if(dirty){ e.preventDefault(); e.returnValue = ""; } });
+
+(async function(){
+  $("view").appendChild(el("div",{class:"empty",text:"Loading sessions…"}));
+  try{ await loadAll(); render(); }
+  catch(e){ $("view").textContent = ""; $("banners").appendChild(el("div",{class:"banner err",text:"Couldn't load sessions: " + e.message})); }
+})();
+})();
+</script>
+</body>
+</html>

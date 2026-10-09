@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="89ers Perf">
+  <meta name="theme-color" content="#008348">
+  <link rel="apple-touch-icon" href="/icon-192.jpg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exercise Library — Surrey 89ers Performance Hub</title>
+<link rel="stylesheet" href="/sc.css">
+<style>
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.filters .check{margin-left:auto}
+.filters .check input{accent-color:var(--amber)}
+
+.lib-wrap{display:flex;gap:20px;align-items:flex-start}
+.lib-grid{flex:1;min-width:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.ex-card{display:flex;flex-direction:column;padding:0;border-radius:12px;border:1px solid var(--border-soft);background:var(--card);color:inherit;text-align:left;overflow:hidden;cursor:pointer;transition:border-color .15s}
+.ex-card:hover{border-color:var(--border)}
+.ex-card[aria-pressed="true"]{border-color:var(--green-text)}
+.ex-thumb{position:relative;width:100%;aspect-ratio:16/9;background:#050a07;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ex-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.8}
+.ex-play{position:relative;width:38px;height:38px;border-radius:50%;background:rgba(250,249,246,0.92);display:flex;align-items:center;justify-content:center}
+.ex-play::after{content:'';border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:11px solid #080f0b;margin-left:3px}
+.ex-novid{width:100%;aspect-ratio:16/9;border-bottom:1px dashed rgba(245,158,11,0.4);background:rgba(245,158,11,0.06);display:flex;align-items:center;justify-content:center;color:var(--amber);font-size:12.5px;font-weight:600}
+.ex-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:4px}
+.ex-name{font-weight:600;font-size:14.5px}
+.ex-tags{font-size:12px;color:var(--offwhite-mid)}
+.ex-foot{display:flex;justify-content:space-between;gap:8px;padding-top:6px;font-size:12px}
+.ex-presc{font-family:'Space Grotesk',sans-serif;font-weight:600}
+.ex-used{color:var(--muted);white-space:nowrap}
+
+.editor{flex:none;width:360px;position:sticky;top:76px;overflow:hidden}
+.editor-head{padding:14px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.editor-head h2{font-size:15px;font-weight:700}
+.editor-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.row2{display:flex;gap:10px;flex-wrap:wrap}
+.row2 > .field{flex:1;min-width:110px}
+.presc-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.presc-row .field{width:76px}
+.presc-row .times{height:40px;display:flex;align-items:center;color:var(--muted)}
+.editor-actions{display:flex;gap:10px}
+.editor-actions .btn-primary{flex:1;min-height:44px}
+
+@media (max-width:1100px){
+  .editor{position:fixed;inset:56px 0 0 auto;width:min(420px,100%);border-radius:0;border-width:0 0 0 1px;overflow-y:auto;z-index:90;box-shadow:-20px 0 40px rgba(0,0,0,.5)}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <img class="topbar-logo" src="/icon-192.jpg" alt="89ers">
+    <div><div class="topbar-title">Surrey 89ers</div><div class="topbar-sub">Performance Hub · 2026-27</div></div>
+  </div>
+  <div class="topbar-actions"><button class="btn btn-sm" onclick="SC.logout()">Sign out</button></div>
+</div>
+<div class="layout">
+  <div class="sidenav"></div>
+  <div class="main">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Exercise library</div>
+        <div class="page-sub">Add the video and cues once. Every session that uses the exercise picks them up.</div>
+      </div>
+      <button class="btn btn-primary" id="add-btn" type="button">+ Add exercise</button>
+    </div>
+
+    <div id="banners"></div>
+
+    <div class="filters">
+      <div class="chip-row" id="cats" role="group" aria-label="Filter by type"></div>
+      <label class="check"><input type="checkbox" id="only-missing"> <span id="missing-label">Missing video only</span></label>
+    </div>
+
+    <div class="lib-wrap">
+      <div class="lib-grid" id="grid"></div>
+      <aside class="card editor" id="editor" hidden aria-labelledby="ed-title">
+        <div class="editor-head">
+          <h2 id="ed-title">New exercise</h2>
+          <span class="hint" id="ed-used"></span>
+        </div>
+        <div class="editor-body">
+          <div class="field"><label for="ed-name">Name</label><input class="input" id="ed-name" type="text" maxlength="120"></div>
+          <div class="field">
+            <label for="ed-video">Demo video — YouTube link</label>
+            <input class="input" id="ed-video" type="url" placeholder="Paste a YouTube link" maxlength="300">
+            <span class="hint" id="ed-video-msg"></span>
+            <span class="hint">Unlisted YouTube videos work. Players can't comment or see your channel.</span>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="ed-type">Type</label>
+              <select class="select" id="ed-type"><option value="">Not set</option><option>Power</option><option>Strength</option><option>Iso</option><option>Mobility</option></select></div>
+            <div class="field"><label for="ed-measure">Measured by</label>
+              <select class="select" id="ed-measure"><option value="reps">Reps</option><option value="time">Time (seconds)</option></select></div>
+          </div>
+          <div class="field"><label for="ed-tags">Tags</label><input class="input" id="ed-tags" type="text" placeholder="e.g. Lower · Trap bar" maxlength="120"></div>
+          <div class="field">
+            <span class="lbl">Default prescription</span>
+            <div class="presc-row">
+              <div class="field"><label for="ed-sets">Sets</label><input class="input mono" id="ed-sets" type="number" min="1" inputmode="numeric"></div>
+              <span class="times" aria-hidden="true">×</span>
+              <div class="field"><label for="ed-amount" id="ed-amount-label">Reps</label><input class="input mono" id="ed-amount" type="number" min="1" inputmode="numeric"></div>
+              <label class="check"><input type="checkbox" id="ed-side"> Each side</label>
+            </div>
+            <div class="presc-row" style="margin-top:8px">
+              <div class="field" style="width:130px"><label for="ed-loadtype">Load</label>
+                <select class="select" id="ed-loadtype"><option value="pct">% 1RM</option><option value="kg">kg</option><option value="rpe">RPE</option><option value="bw">Bodyweight</option></select></div>
+              <div class="field" id="ed-load-wrap"><label for="ed-load">Value</label><input class="input mono" id="ed-load" type="text" inputmode="decimal" maxlength="20"></div>
+              <div class="field"><label for="ed-rest">Rest (s)</label><input class="input mono" id="ed-rest" type="number" min="0" step="15" inputmode="numeric"></div>
+            </div>
+          </div>
+          <div class="field"><label for="ed-cues">Coaching cues</label><textarea class="textarea" id="ed-cues" rows="3" maxlength="1000" placeholder="Short cues players read before the set"></textarea></div>
+          <div class="hint err" id="ed-msg" hidden></div>
+          <div class="editor-actions">
+            <button class="btn btn-primary" id="ed-save" type="button">Save</button>
+            <button class="btn btn-ghost" id="ed-cancel" type="button">Cancel</button>
+          </div>
+          <button class="btn btn-ghost btn-sm btn-danger" id="ed-remove" type="button" hidden>Remove from library</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script src="/sc.js"></script>
+<script src="/hub.js"></script>
+<script>
+(function(){
+if(!window.SC) return;               // not signed in: sc.js is already redirecting
+const el = SC.el, $ = id => document.getElementById(id);
+
+let EXERCISES = [];                   // active library entries
+let USED = {};                        // exercise_id -> number of sessions using it
+let LIVE = false;                     // has the endpoint's S&C update been deployed?
+let SET_UP = false;                   // does the EXERCISES tab exist yet?
+let LEGACY_OFFER = true;
+let cat = "All", onlyMissing = false;
+let sel = null;                       // exercise_id being edited, "new", or null
+let removeArmed = false;
+
+async function load(){
+  const [ex, ses, rows, live] = await Promise.all([
+    SC.readTab("EXERCISES"), SC.readTab("SESSIONS"), SC.readTab("SESSION EXERCISES"), SC.saveIsLive()
+  ]);
+  LIVE = live; SET_UP = ex.setUp;
+  EXERCISES = ex.rows.filter(x => !SC.isTrue(x.archived))
+    .sort((a,b) => a.name.localeCompare(b.name, "en", {sensitivity:"base"}));
+  const liveSessions = new Set(ses.rows.filter(s => !SC.isTrue(s.archived)).map(s => s.session_id));
+  const seen = {};
+  rows.rows.forEach(r => {
+    if(!r.exercise_id || !liveSessions.has(r.session_id)) return;
+    (seen[r.exercise_id] = seen[r.exercise_id] || new Set()).add(r.session_id);
+  });
+  USED = {}; Object.keys(seen).forEach(k => USED[k] = seen[k].size);
+  LEGACY_OFFER = !ses.rows.some(s => s.status === "template");
+}
+
+function banners(){
+  const b = $("banners"); b.textContent = "";
+  if(!LIVE){
+    b.appendChild(el("div",{class:"banner warn"},[
+      el("span",{text:"Saving is not switched on yet. The endpoint needs its S&C update deployed, so you can look around but nothing will save."})
+    ]));
+    return;
+  }
+  if(!EXERCISES.length && LEGACY_OFFER){
+    const btn = el("button",{class:"btn btn-sm btn-primary",type:"button",text:"Import the current programme",onclick:importLegacy});
+    b.appendChild(el("div",{class:"banner"},[
+      el("span",{text:"The library is empty. You can start it from the programme already on the Strength Program sheet: each exercise is added here, and each day becomes a template session."}),
+      btn
+    ]));
+  }
+}
+
+async function importLegacy(ev){
+  const btn = ev.currentTarget; btn.disabled = true; btn.textContent = "Importing…";
+  try{
+    const out = await SC.post("sc_import_legacy");
+    await load(); render();
+    $("banners").appendChild(el("div",{class:"banner ok",text:
+      "Imported " + out.exercises_added + " exercises and " + out.templates_added +
+      " template sessions. Check each one: type, video and whether it is measured in reps or seconds were not on the old sheet."}));
+  }catch(e){
+    btn.disabled = false; btn.textContent = "Import the current programme";
+    $("banners").appendChild(el("div",{class:"banner err",text:"Couldn't import: " + e.message}));
+  }
+}
+
+function tagLine(x){ return [x.type, x.tags].filter(Boolean).join(" · "); }
+
+function render(){
+  banners();
+
+  const hasUntyped = EXERCISES.some(x => !x.type);
+  const cats = ["All"].concat(SC.TYPES, hasUntyped ? ["Not set"] : []);
+  if(cats.indexOf(cat) < 0) cat = "All";
+  const cw = $("cats"); cw.textContent = "";
+  cats.forEach(c => cw.appendChild(el("button",{class:"chip",type:"button","aria-pressed":String(c===cat),text:c,
+    onclick:()=>{ cat = c; render(); }})));
+
+  const missing = EXERCISES.filter(x => !SC.isYT(x.video_url)).length;
+  $("missing-label").textContent = "Missing video only (" + missing + ")";
+  $("only-missing").checked = onlyMissing;
+
+  const list = EXERCISES.filter(x =>
+    (cat === "All" || (cat === "Not set" ? !x.type : x.type === cat)) &&
+    (!onlyMissing || !SC.isYT(x.video_url)));
+
+  const grid = $("grid"); grid.textContent = "";
+  if(!EXERCISES.length){
+    grid.appendChild(el("div",{class:"empty",style:"grid-column:1/-1",text:
+      SET_UP || LIVE ? "No exercises yet. Add the first one with “Add exercise”." : "No exercises yet."}));
+  }else if(!list.length){
+    grid.appendChild(el("div",{class:"empty",style:"grid-column:1/-1",text:"No exercises match this filter."}));
+  }
+  list.forEach(x => {
+    const has = SC.isYT(x.video_url);
+    const thumb = has
+      ? el("span",{class:"ex-thumb"},[ SC.ytThumb(x.video_url) ? el("img",{src:SC.ytThumb(x.video_url),alt:""}) : null, el("span",{class:"ex-play"}) ])
+      : el("span",{class:"ex-novid",text:"No video yet"});
+    const n = USED[x.exercise_id] || 0;
+    grid.appendChild(el("button",{class:"ex-card",type:"button","aria-pressed":String(sel===x.exercise_id),
+      onclick:()=>openEditor(x.exercise_id)},[
+        thumb,
+        el("span",{class:"ex-body"},[
+          el("span",{class:"ex-name",text:x.name}),
+          el("span",{class:"ex-tags",text:tagLine(x) || "No type set"}),
+          el("span",{class:"ex-foot"},[
+            el("span",{class:"ex-presc",text:SC.prescription(x) || "—"}),
+            el("span",{class:"ex-used",text:"in " + n + (n===1?" session":" sessions")})
+          ])
+        ])
+    ]));
+  });
+}
+
+/* ---------- editor ---------- */
+
+function current(){ return EXERCISES.find(x => x.exercise_id === sel) || null; }
+
+function openEditor(id){
+  sel = id; removeArmed = false;
+  const x = id === "new" ? {name:"",video_url:"",type:"",measure:"reps",tags:"",sets:"3",amount:"5",each_side:"FALSE",load_type:"kg",load:"",rest_s:"60",cues:""} : current();
+  if(!x){ closeEditor(); return; }
+  $("ed-title").textContent = id === "new" ? "New exercise" : "Edit · " + x.name;
+  const n = USED[x.exercise_id] || 0;
+  $("ed-used").textContent = id === "new" ? "" : "Used in " + n + (n===1?" session":" sessions");
+  $("ed-name").value = x.name; $("ed-video").value = x.video_url;
+  $("ed-type").value = SC.TYPES.indexOf(x.type) >= 0 ? x.type : "";
+  $("ed-measure").value = x.measure === "time" ? "time" : "reps";
+  $("ed-tags").value = x.tags; $("ed-sets").value = x.sets; $("ed-amount").value = x.amount;
+  $("ed-side").checked = SC.isTrue(x.each_side);
+  $("ed-loadtype").value = ["pct","kg","rpe","bw"].indexOf(x.load_type) >= 0 ? x.load_type : "bw";
+  $("ed-load").value = x.load; $("ed-rest").value = x.rest_s; $("ed-cues").value = x.cues;
+  $("ed-msg").hidden = true;
+  $("ed-remove").hidden = id === "new";
+  $("ed-remove").textContent = "Remove from library";
+  $("ed-save").disabled = !LIVE; $("ed-save").textContent = "Save";
+  syncEditor();
+  $("editor").hidden = false;
+  render();
+  if(id === "new") $("ed-name").focus();
+}
+function closeEditor(){ sel = null; $("editor").hidden = true; render(); }
+
+function syncEditor(){
+  const v = $("ed-video").value.trim(), msg = $("ed-video-msg");
+  if(!v){ msg.textContent = "No video — players only see the name and cues"; msg.className = "hint warn"; }
+  else if(SC.isYT(v)){ msg.textContent = "Video found · players will see it in every session"; msg.className = "hint ok"; }
+  else { msg.textContent = "That doesn't look like a YouTube link"; msg.className = "hint err"; }
+  $("ed-amount-label").textContent = $("ed-measure").value === "time" ? "Seconds" : "Reps";
+  $("ed-load-wrap").hidden = $("ed-loadtype").value === "bw";
+}
+
+function fail(text){ const m = $("ed-msg"); m.textContent = text; m.hidden = false; }
+
+function formValues(){
+  return {
+    exercise_id: sel === "new" ? "" : sel,
+    name: $("ed-name").value.trim(), video_url: $("ed-video").value.trim(),
+    type: $("ed-type").value, measure: $("ed-measure").value, tags: $("ed-tags").value.trim(),
+    sets: $("ed-sets").value, amount: $("ed-amount").value, each_side: $("ed-side").checked,
+    load_type: $("ed-loadtype").value, load: $("ed-loadtype").value === "bw" ? "" : $("ed-load").value.trim(),
+    rest_s: $("ed-rest").value, cues: $("ed-cues").value.trim(), archived: false
+  };
+}
+
+async function save(archive){
+  const x = formValues();
+  if(archive){ const c = current(); if(!c) return; Object.assign(x, c, {each_side:SC.isTrue(c.each_side), archived:true}); }
+  else{
+    if(!x.name) return fail("Give the exercise a name.");
+    if(x.video_url && !SC.isYT(x.video_url)) return fail("The video link needs to be a YouTube link, or left empty.");
+  }
+  const btn = archive ? $("ed-remove") : $("ed-save");
+  btn.disabled = true; btn.textContent = archive ? "Removing…" : "Saving…";
+  $("ed-msg").hidden = true;
+  try{
+    const out = await SC.post("sc_exercise_save", {exercise:x});
+    await load();
+    if(archive) closeEditor(); else openEditor(out.exercise_id);
+  }catch(e){
+    fail("Couldn't save: " + e.message);
+    btn.disabled = false; btn.textContent = archive ? "Remove from library" : "Save";
+  }
+}
+
+$("add-btn").addEventListener("click", () => openEditor("new"));
+$("only-missing").addEventListener("change", e => { onlyMissing = e.target.checked; render(); });
+["ed-video","ed-measure","ed-loadtype"].forEach(id => $(id).addEventListener("input", syncEditor));
+$("ed-save").addEventListener("click", () => save(false));
+$("ed-cancel").addEventListener("click", closeEditor);
+$("ed-remove").addEventListener("click", () => {
+  if(!LIVE) return;
+  if(!removeArmed){
+    removeArmed = true;
+    const n = USED[sel] || 0;
+    $("ed-remove").textContent = n ? "Used in " + n + (n===1?" session":" sessions") + " — tap again to remove" : "Tap again to remove";
+    return;
+  }
+  save(true);
+});
+
+(async function(){
+  $("grid").appendChild(el("div",{class:"empty",style:"grid-column:1/-1",text:"Loading the library…"}));
+  try{ await load(); render(); }
+  catch(e){
+    $("grid").textContent = "";
+    $("banners").appendChild(el("div",{class:"banner err",text:"Couldn't load the library: " + e.message}));
+  }
+})();
+})();
+</script>
+</body>
+</html>

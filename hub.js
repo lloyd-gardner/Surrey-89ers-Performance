@@ -24,7 +24,9 @@
     { group: "Practice", href: "practice-plan.html", icon: "📋", label: "Practice Plan",       sub: "Practice plans and drills" },
     { group: "Squad",    href: "attendance.html",    icon: "🩺", label: "Attendance & Injury", sub: "Season attendance grid and physio status" },
     { group: "Squad",    href: "wellness.html",      icon: "📈", label: "Squad Wellness",      sub: "Daily check-ins and flags" },
-    { group: "Squad",    href: "load.html",          icon: "🏋", label: "Training Load",       sub: "Session RPE and ACWR" }
+    { group: "Squad",    href: "load.html",          icon: "🏋", label: "Training Load",       sub: "Session RPE and ACWR" },
+    { group: "Strength & Conditioning", href: "sc-sessions.html", icon: "🗓", label: "S&C Sessions",     sub: "Build, assign and publish sessions" },
+    { group: "Strength & Conditioning", href: "sc-library.html",  icon: "🎬", label: "Exercise Library", sub: "Exercises with demo videos and cues" }
   ];
 
   window.PERF_HUB = { sections: SECTIONS, coachesHub: COACHES_HUB };

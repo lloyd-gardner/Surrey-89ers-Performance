@@ -10,6 +10,9 @@ Staff hub for the performance staff (S&C coach, physio). Static HTML/CSS/JS, no 
 | `hub.js` | The one list of hub sections; relabels mirrored pages and builds their side navigation |
 | `vercel.json` | Serves five Coaches Hub pages at this address |
 | `manifest.json`, `sw.js` | Home-screen install and offline fallback |
+| `sc-library.html` | S&C exercise library: name, type, default prescription, demo video link, cues |
+| `sc-sessions.html` | S&C sessions: list, build from the library, assign players, repeat weekly, publish |
+| `sc.js`, `sc.css` | Shared code and styles for the hub's own pages (sheet reading, saving, sign-in check) |
 
 ## Shared pages are mirrored, not copied
 
@@ -26,3 +29,13 @@ Each of those pages loads `/hub.js`. On the Coaches Hub that is an empty placeho
 ## Password
 
 `index.html` holds the same password as the Coaches Hub pages and uses the same session key (`89ers_auth`), so one sign-in covers every page at this address. If the Coaches Hub password changes, change it in `index.html` here too. The password is in the page source, so it keeps out casual visitors only.
+
+## Strength & Conditioning pages
+
+Built from the S&C coach's "S&C workflow" design. They read and write three tabs on the Strength Program sheet: `EXERCISES`, `SESSIONS` and `SESSION EXERCISES`. Reads are live CSV by tab and header name. Saves go to the Player Portal Endpoint (Apps Script) as request types starting `sc_`, handled by `Strength.gs` in that script project. Nothing is deleted; removing an exercise or session marks it `archived`.
+
+A session row keeps its own sets, reps, load and rest. Its video and cues are stored only when they differ from the library, so a change in the library reaches every session that uses the exercise.
+
+These pages have no password screen of their own. If nobody is signed in they send the visitor to `index.html?next=<page>`.
+
+Not built yet: the planner calendar, the overview page, per-player changes, notifications, and the player-side screens. Player portals still read the old `STRENGTH PROGRAM` and `ASSIGNMENT` tabs.

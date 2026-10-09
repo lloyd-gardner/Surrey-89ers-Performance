@@ -1,0 +1,97 @@
+/* Surrey 89ers Performance Hub — shared styles for the hub's own pages.
+   Same tokens as the Coaches Hub pages, so both hubs look like one family. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#008348;--green-dark:#005c33;--green-deep:#003d22;--green-dim:rgba(0,131,72,0.15);
+  --green-text:#4ade80;
+  --offwhite:#FAF9F6;--offwhite-mid:rgba(250,249,246,0.6);--muted:rgba(250,249,246,0.4);
+  --card:#0f1f16;--card2:#152a1c;--border:rgba(0,131,72,0.2);--border-soft:rgba(250,249,246,0.07);
+  --field:rgba(0,0,0,0.3);--field-border:rgba(250,249,246,0.14);
+  --red:#e05555;--amber:#f59e0b;--blue:#60c8fa;
+}
+body{font-family:'Inter',sans-serif;background:#080f0b;color:var(--offwhite);min-height:100vh;font-size:14px;line-height:1.45}
+[hidden]{display:none !important}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--green-text)}
+
+/* ---- top bar and layout ---- */
+.topbar{background:#080f0b;border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:14px;min-width:0}
+.topbar-logo{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700}
+.topbar-sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 56px)}
+.sidenav{border-right:1px solid var(--border-soft);padding:18px 12px;display:flex;flex-direction:column;gap:2px}
+.nav-group-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:14px 12px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;font-size:13px;font-weight:500;color:var(--offwhite-mid);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.nav-item:hover{background:var(--card);color:var(--offwhite)}
+.nav-item.active{background:var(--green-dim);color:var(--green-text);font-weight:600}
+.nav-icon{width:16px;text-align:center;font-size:14px;opacity:0.8}
+.main{padding:24px 28px 56px;max-width:1320px;width:100%;min-width:0}
+
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.page-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;letter-spacing:-0.3px}
+.page-sub{font-size:12.5px;color:var(--offwhite-mid);margin-top:3px}
+
+/* ---- buttons ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;font-size:13px;font-weight:600;padding:0 14px;border-radius:8px;cursor:pointer;border:1px solid var(--field-border);background:var(--card);color:var(--offwhite);transition:all 0.15s;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--card2);border-color:var(--border)}
+.btn-primary{background:var(--green);border-color:var(--green);color:#fff;font-weight:700}
+.btn-primary:hover{background:var(--green-dark);border-color:var(--green-dark)}
+.btn-ghost{background:transparent}
+.btn-sm{min-height:34px;padding:0 10px;font-size:12px}
+.btn-icon{width:38px;min-height:38px;padding:0;flex:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-danger{color:#f0a0a0}
+
+.chip{min-height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--field-border);background:transparent;color:var(--offwhite-mid);font-size:12.5px;font-weight:600;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--green-dim);border-color:var(--green);color:var(--green-text)}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---- cards and fields ---- */
+.card{background:var(--card);border:1px solid var(--border-soft);border-radius:12px}
+.card-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--offwhite-mid);display:flex;align-items:center;gap:7px}
+.card-title::before{content:'';display:block;width:3px;height:12px;background:var(--green);border-radius:2px}
+
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.field .lbl{font-size:12px;color:var(--offwhite-mid)}
+.input,.select,.textarea{height:40px;padding:0 12px;border-radius:8px;border:1px solid var(--field-border);background:var(--field);color:var(--offwhite);font-size:16px;outline:none;width:100%}
+.textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.4}
+.select{padding:0 8px}
+.select option{background:#0f1f16;color:var(--offwhite)}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--green)}
+.input.mono{font-family:'Space Grotesk',sans-serif;font-weight:600}
+.hint{font-size:12px;color:var(--offwhite-mid)}
+.hint.ok{color:var(--green-text);font-weight:600}
+.hint.warn{color:var(--amber);font-weight:600}
+.hint.err{color:#f0a0a0;font-weight:600}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--offwhite);cursor:pointer;min-height:40px}
+.check input{width:18px;height:18px;accent-color:var(--green)}
+
+/* ---- banners ---- */
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;border:1px solid var(--border-soft);background:var(--card)}
+.banner.warn{border-color:rgba(245,158,11,0.35);background:rgba(245,158,11,0.08);color:#f6c56b}
+.banner.err{border-color:rgba(224,85,85,0.4);background:rgba(224,85,85,0.1);color:#f0a0a0}
+.banner.ok{border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.08);color:var(--green-text)}
+.empty{padding:36px 20px;text-align:center;color:var(--offwhite-mid);border:1px dashed var(--field-border);border-radius:12px;line-height:1.6}
+
+.status{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid transparent;white-space:nowrap}
+.status-published{color:var(--green-text);background:rgba(74,222,128,0.10);border-color:rgba(74,222,128,0.25)}
+.status-draft{color:var(--amber);background:rgba(245,158,11,0.10);border-color:rgba(245,158,11,0.3)}
+.status-template{color:var(--blue);background:rgba(96,200,250,0.10);border-color:rgba(96,200,250,0.3)}
+
+/* ---- narrow screens: the side menu becomes a strip across the top ---- */
+@media (max-width:900px){
+  .layout{display:block}
+  .sidenav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--border-soft);padding:8px 10px;gap:4px;-webkit-overflow-scrolling:touch}
+  .nav-group-label{display:none}
+  .nav-item{flex:none;min-height:40px}
+  .main{padding:18px 14px 48px}
+  .topbar{padding:0 14px}
+}
+@media (max-width:560px){
+  .hide-narrow{display:none}
+}

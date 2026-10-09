@@ -120,7 +120,16 @@ function logout(){
   location.reload();
 }
 
+/* Hub pages that need a sign-in send people here with ?next=<page>.
+   Only a plain page name on this site is accepted. */
+function nextPage(){
+  const n=new URLSearchParams(location.search).get("next")||"";
+  return /^[a-z0-9-]+\.html(\?[\w=&%.-]*)?$/i.test(n)?n:"";
+}
+
 function showApp(){
+  const next=nextPage();
+  if(next){ location.replace(next); return; }
   document.getElementById("login-screen").style.display="none";
   document.getElementById("app").style.display="block";
   init();
