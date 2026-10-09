@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/schedule.html",      "destination": "https://surrey-89ers-coaches-zsex.vercel.app/schedule.html" },
+    { "source": "/practice-plan.html", "destination": "https://surrey-89ers-coaches-zsex.vercel.app/practice-plan.html" },
+    { "source": "/attendance.html",    "destination": "https://surrey-89ers-coaches-zsex.vercel.app/attendance.html" },
+    { "source": "/wellness.html",      "destination": "https://surrey-89ers-coaches-zsex.vercel.app/wellness.html" },
+    { "source": "/load.html",          "destination": "https://surrey-89ers-coaches-zsex.vercel.app/load.html" },
+    { "source": "/icon-192.jpg",       "destination": "https://surrey-89ers-coaches-zsex.vercel.app/icon-192.jpg" }
+  ]
+}

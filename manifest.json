@@ -1,0 +1,13 @@
+{
+  "name": "Surrey 89ers Performance Hub",
+  "short_name": "89ers Perf",
+  "description": "Surrey 89ers performance staff hub",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#080f0b",
+  "theme_color": "#008348",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icon-192.jpg", "sizes": "192x192", "type": "image/jpeg" }
+  ]
+}

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="89ers Perf">
+  <meta name="theme-color" content="#008348">
+  <link rel="apple-touch-icon" href="/icon-192.jpg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surrey 89ers — Performance Hub</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#008348;--green-dark:#005c33;--green-deep:#003d22;--green-dim:rgba(0,131,72,0.15);
+  --offwhite:#FAF9F6;--offwhite-mid:rgba(250,249,246,0.6);--muted:rgba(250,249,246,0.4);
+  --card:#0f1f16;--card2:#152a1c;--border:rgba(0,131,72,0.2);--border-soft:rgba(250,249,246,0.07);
+  --red:#e05555;--amber:#f59e0b;
+}
+body{font-family:'Inter',sans-serif;background:#080f0b;color:var(--offwhite);min-height:100vh}
+
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(135deg,#002a18 0%,#003d22 50%,#001a0e 100%)}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:360px;max-width:100%;text-align:center}
+.login-logo{width:72px;height:72px;border-radius:50%;margin:0 auto 20px;display:block;object-fit:cover}
+.login-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:32px;letter-spacing:1px;text-transform:uppercase}
+.login-input{width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--offwhite);font-size:16px;font-family:'Inter',sans-serif;margin-bottom:12px;outline:none}
+.login-input:focus{border-color:var(--green)}
+.login-btn{width:100%;background:var(--green);border:none;border-radius:8px;padding:13px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.5px}
+.login-btn:hover{background:var(--green-dark)}
+.login-error{font-size:12px;color:var(--red);margin-top:8px;display:none}
+
+#app{display:none}
+
+.topbar{background:#080f0b;border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:14px;min-width:0}
+.topbar-logo{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700}
+.topbar-sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.btn{font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;cursor:pointer;border:1px solid var(--border-soft);background:var(--card);color:var(--offwhite);transition:all 0.15s;text-decoration:none;font-family:inherit;white-space:nowrap}
+.btn:hover{background:var(--card2);border-color:var(--border)}
+
+.main{padding:24px 28px;max-width:1240px;width:100%;margin:0 auto}
+.page-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;letter-spacing:-0.3px}
+.page-sub{font-size:12px;color:var(--muted);margin-top:3px;margin-bottom:24px}
+
+.group-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;margin:22px 0 10px}
+.group-label:first-child{margin-top:0}
+.group-label::before{content:'';display:block;width:3px;height:12px;background:var(--green);border-radius:2px}
+.tile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.tile{background:var(--card);border:1px solid var(--border-soft);border-radius:10px;padding:16px;display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;min-height:76px;transition:border-color .15s,transform .15s}
+.tile:hover{border-color:var(--green);transform:translateY(-2px)}
+.tile-icon{width:42px;height:42px;border-radius:10px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.tile-body{flex:1;min-width:0}
+.tile-label{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600}
+.tile-sub{font-size:11.5px;color:var(--offwhite-mid);margin-top:3px;line-height:1.35}
+.tile-arrow{font-size:15px;color:var(--green);flex-shrink:0}
+
+@media (max-width:720px){
+  .topbar{padding:0 14px}
+  .main{padding:18px 14px}
+  .tile-grid{grid-template-columns:1fr}
+  .hide-narrow{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <img class="login-logo" src="/icon-192.jpg" alt="Surrey 89ers">
+    <div class="login-title">Surrey 89ers</div>
+    <div class="login-sub">Performance Hub · 2026-27</div>
+    <input class="login-input" type="password" id="login-pass" placeholder="Password" autocomplete="off">
+    <button class="login-btn" onclick="tryLogin()">Sign In</button>
+    <div class="login-error" id="login-error">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<div id="app">
+<div class="topbar">
+  <div class="topbar-left">
+    <img class="topbar-logo" src="/icon-192.jpg" alt="89ers">
+    <div><div class="topbar-title">Surrey 89ers</div><div class="topbar-sub">Performance Hub · 2026-27</div></div>
+  </div>
+  <div class="topbar-actions">
+    <a class="btn hide-narrow" id="coaches-link" href="#">Coaches Hub ↗</a>
+    <button class="btn" onclick="logout()">Sign out</button>
+  </div>
+</div>
+<div class="main">
+  <div class="page-title">Performance Dashboard</div>
+  <div class="page-sub" id="page-date"></div>
+  <div id="sections"></div>
+</div>
+</div>
+
+<script src="/hub.js"></script>
+<script>
+/* Same password and the same session key as the Coaches Hub pages, so one
+   sign-in covers the dashboard and every mirrored page at this address.
+   If the Coaches Hub password changes, change it here too. */
+const PASSWORD="89ers2627";
+
+function tryLogin(){
+  if(document.getElementById("login-pass").value===PASSWORD){
+    sessionStorage.setItem("89ers_auth","1");
+    showApp();
+  }else{
+    document.getElementById("login-error").style.display="block";
+  }
+}
+document.getElementById("login-pass").addEventListener("keydown",e=>{if(e.key==="Enter")tryLogin();});
+
+function logout(){
+  sessionStorage.removeItem("89ers_auth");
+  location.reload();
+}
+
+function showApp(){
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app").style.display="block";
+  init();
+}
+
+function el(tag,cls,text){
+  const e=document.createElement(tag);
+  if(cls) e.className=cls;
+  if(text!=null) e.textContent=text;
+  return e;
+}
+
+function init(){
+  document.getElementById("page-date").textContent=
+    new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  document.getElementById("coaches-link").href=PERF_HUB.coachesHub;
+
+  // Tiles come from the one section list in hub.js, grouped as the nav is.
+  const host=document.getElementById("sections");
+  host.textContent="";
+  let group=null, grid=null;
+  PERF_HUB.sections.forEach(s=>{
+    if(s.group!==group){
+      group=s.group;
+      host.appendChild(el("div","group-label",group));
+      grid=el("div","tile-grid");
+      host.appendChild(grid);
+    }
+    const a=el("a","tile");
+    a.href=s.href;
+    a.appendChild(el("div","tile-icon",s.icon));
+    const body=el("div","tile-body");
+    body.appendChild(el("div","tile-label",s.label));
+    body.appendChild(el("div","tile-sub",s.sub));
+    a.appendChild(body);
+    a.appendChild(el("div","tile-arrow","→"));
+    grid.appendChild(a);
+  });
+}
+
+if(sessionStorage.getItem("89ers_auth")==="1") showApp();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW failed:', e));
+  });
+}
+</script>
+</body>
+</html>
