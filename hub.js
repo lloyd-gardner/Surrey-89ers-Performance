@@ -9,7 +9,7 @@
    Each of those pages loads /hub.js. On the Coaches Hub that file is
    an empty placeholder. Here it is this file, which:
      1. holds the one list of Performance Hub sections (SECTIONS), used
-        by the dashboard tiles and by the side navigation;
+        by the side navigation on every page;
      2. relabels a mirrored page so it reads "Performance Hub" and its
         back link and side navigation stay inside this hub.
 
@@ -20,16 +20,17 @@
   var COACHES_HUB = "https://surrey-89ers-coaches-zsex.vercel.app/";
 
   var SECTIONS = [
-    { group: "Schedule", href: "schedule.html",      icon: "📅", label: "Season Schedule",     sub: "Practices, games, S&C, treatment and travel" },
-    { group: "Practice", href: "practice-plan.html", icon: "📋", label: "Practice Plan",       sub: "Practice plans and drills" },
-    { group: "Squad",    href: "attendance.html",    icon: "🩺", label: "Attendance & Injury", sub: "Season attendance grid and physio status" },
+    { group: "Strength & Conditioning", href: "sc-overview.html", icon: "🏋", label: "S&C Overview",     sub: "Today, participation and progression" },
+    { group: "Strength & Conditioning", href: "sc-sessions.html", icon: "🗓", label: "Sessions",         sub: "Build, assign and publish sessions" },
+    { group: "Strength & Conditioning", href: "sc-library.html",  icon: "🎬", label: "Exercise Library", sub: "Exercises with demo videos and cues" },
+    { group: "Therapy",  href: "therapy.html",       icon: "🩺", label: "Therapy",             sub: "Clinic notes, coming soon" },
     { group: "Squad",    href: "wellness.html",      icon: "📈", label: "Squad Wellness",      sub: "Daily check-ins and flags" },
-    { group: "Squad",    href: "load.html",          icon: "🏋", label: "Training Load",       sub: "Session RPE and ACWR" },
-    { group: "Strength & Conditioning", href: "sc-sessions.html", icon: "🗓", label: "S&C Sessions",     sub: "Build, assign and publish sessions" },
-    { group: "Strength & Conditioning", href: "sc-library.html",  icon: "🎬", label: "Exercise Library", sub: "Exercises with demo videos and cues" }
+    { group: "Squad",    href: "load.html",          icon: "📊", label: "Training Load",       sub: "Session RPE and ACWR" },
+    { group: "Squad",    href: "attendance.html",    icon: "📝", label: "Attendance & Injury", sub: "Season attendance grid and physio status" },
+    { group: "Schedule", href: "schedule.html",      icon: "📅", label: "Season Schedule",     sub: "Practices, games, S&C, treatment and travel" },
+    { group: "Schedule", href: "practice-plan.html", icon: "📋", label: "Practice Plan",       sub: "Practice plans and drills" }
   ];
 
-  window.PERF_HUB = { sections: SECTIONS, coachesHub: COACHES_HUB };
 
   var here = location.pathname.split("/").pop() || "index.html";
 
@@ -83,5 +84,8 @@
     Array.prototype.forEach.call(document.querySelectorAll(".sidenav"), buildNav);
   }
 
+  window.PERF_HUB = { sections: SECTIONS, coachesHub: COACHES_HUB, buildNav: buildNav };
+
+  /* The dashboard builds its menu itself, after sign-in. */
   if (here !== "index.html") apply();
 })();

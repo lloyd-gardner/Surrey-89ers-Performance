@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="89ers Perf">
+  <meta name="theme-color" content="#008348">
+  <link rel="apple-touch-icon" href="/icon-192.jpg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S&amp;C Overview — Surrey 89ers Performance Hub</title>
+<link rel="stylesheet" href="/sc.css">
+<style>
+.head-btns{display:flex;gap:8px;flex-wrap:wrap}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--border-soft);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:96px}
+.kpi-l{font-size:9.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--offwhite-mid)}
+.kpi-v{font-family:'Space Grotesk',sans-serif;font-size:25px;font-weight:700;line-height:1.1;margin-top:8px}
+.kpi-v small{font-size:14px;font-weight:600;color:var(--muted)}
+.kpi-s{font-size:11.5px;color:var(--offwhite-mid);margin-top:5px}
+.t-good{color:var(--green-text)}.t-watch{color:var(--amber)}.t-bad{color:#f08a8a}.t-gray{color:var(--offwhite-mid)}
+
+.sec{overflow:hidden;margin-bottom:16px}
+.sec-head{padding:13px 16px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.sec-body{padding:16px}
+
+/* progression */
+.prog-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.prog-controls .field{min-width:180px}
+.prog{display:flex;gap:18px;align-items:stretch}
+.prog-chart{flex:1;min-width:0}
+.prog-side{flex:none;width:250px;background:var(--card2);border:1px solid var(--border-soft);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.chart-box{position:relative}
+.chart-box svg{display:block;width:100%;height:auto}
+.tip{position:absolute;pointer-events:none;background:#06100a;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:11.5px;line-height:1.5;white-space:nowrap;z-index:5;transform:translate(-50%,-110%)}
+.tip b{font-family:'Space Grotesk',sans-serif;font-size:14px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--offwhite-mid);margin-top:8px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid var(--green-text);vertical-align:middle;margin-right:6px}
+.legend i.avg{border-top:2px dashed rgba(250,249,246,0.55)}
+.who{display:flex;align-items:center;gap:10px}
+.av{width:38px;height:38px;border-radius:50%;flex:none;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--green),var(--green-dark));display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%}
+.who-name{font-weight:600}
+.stat-l{font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--offwhite-mid)}
+.stat-v{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-top:2px}
+.stat-s{font-size:11.5px;color:var(--offwhite-mid)}
+
+/* participation */
+.tbl-wrap{overflow-x:auto}
+table.part{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+.part th{text-align:left;font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--offwhite-mid);padding:9px 12px;border-bottom:1px solid var(--border-soft);white-space:nowrap}
+.part td{padding:9px 12px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+.part tr:last-child td{border-bottom:0}
+.part .pl{display:flex;align-items:center;gap:10px;background:none;border:0;color:inherit;cursor:pointer;text-align:left;padding:0}
+.part .pl .av{width:30px;height:30px;font-size:10px}
+.chipst{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;border:1px solid transparent;white-space:nowrap}
+.st-done{color:var(--green-text);background:rgba(74,222,128,0.10);border-color:rgba(74,222,128,0.25)}
+.st-partial{color:var(--amber);background:rgba(245,158,11,0.10);border-color:rgba(245,158,11,0.3)}
+.st-missed{color:#f0a07a;border-color:rgba(240,160,122,0.4)}
+.st-todo,.st-upcoming{color:var(--offwhite-mid);border-color:var(--field-border)}
+.st-na{color:var(--muted)}
+.rate{font-family:'Space Grotesk',sans-serif;font-weight:700}
+
+/* needs attention and this week */
+.att{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border-soft)}
+.att:last-child{border-bottom:0}
+.att-body{flex:1;min-width:0}
+.att-why{font-size:12px;color:var(--offwhite-mid);margin-top:2px;line-height:1.4}
+.week{display:flex;flex-direction:column;gap:8px}
+.week-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:8px;background:var(--card2);border:1px solid var(--border-soft);text-decoration:none;color:inherit}
+.week-row.today{border-color:var(--green)}
+.week-day{width:74px;flex:none;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px}
+.week-name{flex:1;min-width:140px;font-weight:600}
+.week-meta{font-size:12px;color:var(--offwhite-mid)}
+.two{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+
+@media (max-width:980px){
+  .prog{flex-direction:column}
+  .prog-side{width:100%;flex-direction:row;flex-wrap:wrap}
+  .prog-side > div{flex:1;min-width:130px}
+  .two{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <img class="topbar-logo" src="/icon-192.jpg" alt="89ers">
+    <div><div class="topbar-title">Surrey 89ers</div><div class="topbar-sub">Performance Hub · 2026-27</div></div>
+  </div>
+  <div class="topbar-actions"><button class="btn btn-sm" onclick="SC.logout()">Sign out</button></div>
+</div>
+<div class="layout">
+  <div class="sidenav"></div>
+  <div class="main">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Strength &amp; Conditioning</div>
+        <div class="page-sub" id="page-sub">Loading…</div>
+      </div>
+      <div class="head-btns">
+        <a class="btn" href="sc-library.html">Exercise library</a>
+        <a class="btn btn-primary" href="sc-sessions.html">Plan sessions</a>
+      </div>
+    </div>
+    <div id="banners"></div>
+    <div class="kpi-row" id="kpis"></div>
+
+    <div class="two">
+      <section class="card sec" aria-labelledby="wk-h">
+        <div class="sec-head"><h2 class="card-title" id="wk-h">This week's sessions</h2><span class="hint" id="wk-range"></span></div>
+        <div class="sec-body"><div class="week" id="week"></div></div>
+      </section>
+      <section class="card sec" aria-labelledby="att-h">
+        <div class="sec-head"><h2 class="card-title" id="att-h">Needs attention</h2></div>
+        <div class="sec-body" id="attention" style="padding-top:6px;padding-bottom:6px"></div>
+      </section>
+    </div>
+
+    <section class="card sec" aria-labelledby="prog-h" id="prog-sec">
+      <div class="sec-head"><h2 class="card-title" id="prog-h">Exercise progression</h2><span class="hint">Weekly, from what players logged</span></div>
+      <div class="sec-body">
+        <div class="prog-controls">
+          <div class="field"><label for="sel-player">Player</label><select class="select" id="sel-player"></select></div>
+          <div class="field"><label for="sel-ex">Exercise</label><select class="select" id="sel-ex"></select></div>
+          <div class="field"><span class="lbl">Measure</span><div class="chip-row" id="metrics" role="group" aria-label="Measure"></div></div>
+          <label class="check"><input type="checkbox" id="cmp" checked> Compare squad average</label>
+        </div>
+        <div class="prog">
+          <div class="prog-chart">
+            <div class="chart-box" id="chart"></div>
+            <div class="legend" id="legend"></div>
+          </div>
+          <aside class="prog-side" id="prog-side"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="card sec" aria-labelledby="part-h">
+      <div class="sec-head">
+        <h2 class="card-title" id="part-h">Participation · this week</h2>
+        <span class="hint">Lowest 4-week rate first · tap a name to chart them</span>
+      </div>
+      <div class="tbl-wrap" id="part"></div>
+      <div class="hint" style="padding:10px 16px 14px">A session counts as done when a player has logged every exercise on its date, and partial when they logged some. The 4-week rate is the share of assigned sessions with anything logged. Player portals do not show hub sessions yet, so until they do this counts any strength log saved on the session's date.</div>
+    </section>
+  </div>
+</div>
+
+<script src="/sc.js"></script>
+<script src="/hub.js"></script>
+<script>
+(function(){
+if(!window.SC) return;
+const el = SC.el, $ = id => document.getElementById(id);
+const WEEKS = 10;
+const METRICS = [["top","Top set (kg)"],["e1rm","Est. 1RM (kg)"],["vol","Volume (kg)"]];
+const ST = {done:"Done", partial:"Partial", missed:"Missed", todo:"Not started", upcoming:"Upcoming", na:"—"};
+
+let ROSTER = [], SESSIONS = [], ROWS = {}, LOG = [], LIB = {};
+let player = "", exKey = "", metric = "top", compare = true;
+const today = SC.todayISO();
+
+function mondayOf(iso){ const d = SC.parseDate(iso); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return SC.isoDate(d); }
+function assigned(s, slug){ return ("," + s.players + ",").indexOf("," + slug + ",") >= 0; }
+function fmt(v){ if(v >= 1000) return Math.round(v).toLocaleString("en-GB"); return Number.isInteger(v) ? String(v) : v.toFixed(1); }
+function dayLabel(iso){ return SC.parseDate(iso).toLocaleDateString("en-GB",{weekday:"short", day:"numeric"}); }
+
+/* done / partial / missed / todo / upcoming / na for one player and one session */
+function statusFor(s, slug){
+  if(!assigned(s, slug)) return "na";
+  if(s.date > today) return "upcoming";
+  const want = (ROWS[s.session_id] || []).length;
+  const got = LOG.filter(e => e.slug === slug && e.date === s.date).length;
+  if(got && got >= want) return "done";
+  if(got) return "partial";
+  return s.date === today ? "todo" : "missed";
+}
+
+async function load(){
+  const [roster, ses, rows, ex, log] = await Promise.all([
+    SC.loadRoster(), SC.readTab("SESSIONS"), SC.readTab("SESSION EXERCISES"), SC.readTab("EXERCISES"),
+    SC.loadStrengthLog().catch(e => { console.error(e); return []; })
+  ]);
+  ROSTER = roster; LOG = log;
+  SESSIONS = ses.rows.filter(s => !SC.isTrue(s.archived) && s.status === "published" && s.date)
+    .sort((a,b) => (a.date + a.start_time).localeCompare(b.date + b.start_time));
+  ROWS = {}; rows.rows.forEach(r => (ROWS[r.session_id] = ROWS[r.session_id] || []).push(r));
+  LIB = {}; ex.rows.forEach(x => LIB[x.exercise_id] = x);
+  return ses.setUp;
+}
+
+/* ---------- headline numbers ---------- */
+
+function rate4(slug){
+  const from = SC.addDaysISO(today, -27);
+  const mine = SESSIONS.filter(s => s.date >= from && s.date <= today && assigned(s, slug))
+    .map(s => statusFor(s, slug)).filter(st => st !== "todo");
+  if(!mine.length) return null;
+  return { n: mine.length, hit: mine.filter(st => st === "done" || st === "partial").length };
+}
+
+function kpi(label, value, small, sub, cls){
+  return el("div",{class:"kpi"},[ el("div",{class:"kpi-l",text:label}),
+    el("div",{},[ el("div",{class:"kpi-v" + (cls ? " t-" + cls : "")},[ value, small ? el("small",{text:" " + small}) : null ]),
+      el("div",{class:"kpi-s",text:sub}) ]) ]);
+}
+
+function renderKPIs(attention){
+  const box = $("kpis"); box.textContent = "";
+  const todays = SESSIONS.filter(s => s.date === today);
+  if(todays.length){
+    let done = 0, live = 0, todo = 0, n = 0;
+    ROSTER.forEach(p => todays.forEach(s => { const st = statusFor(s, p.slug); if(st === "na") return; n++; if(st === "done") done++; else if(st === "partial") live++; else todo++; }));
+    box.appendChild(kpi("Today · " + todays.map(s => s.name).join(", "), String(done), "/ " + n, "done · " + live + " in progress · " + todo + " not started"));
+  }else box.appendChild(kpi("Today", "—", "", "No S&C session published for today", "gray"));
+
+  let hit = 0, n = 0;
+  ROSTER.forEach(p => { const r = rate4(p.slug); if(r){ hit += r.hit; n += r.n; } });
+  const pct = n ? Math.round(100 * hit / n) : null;
+  box.appendChild(kpi("Participation · 4 weeks", pct == null ? "—" : pct + "%", "", pct == null ? "No published sessions in the last 4 weeks" : "squad average · target 90%", pct == null ? "gray" : pct >= 90 ? "good" : pct >= 75 ? "watch" : "bad"));
+
+  const from = SC.addDaysISO(today, -6);
+  const rpes = LOG.filter(e => e.rpe != null && e.date >= from).map(e => e.rpe);
+  box.appendChild(kpi("Avg session RPE", rpes.length ? SC.mean(rpes).toFixed(1) : "—", rpes.length ? "/ 10" : "", rpes.length ? "last 7 days" : "No RPE logged in the last 7 days", rpes.length ? "" : "gray"));
+
+  box.appendChild(kpi("Needs attention", String(attention.length), "", attention.length ? (attention.length === 1 ? "flag · see below" : "flags · see below") : "Nobody flagged", attention.length ? "watch" : ""));
+}
+
+/* ---------- this week ---------- */
+
+function renderWeek(){
+  const mon = mondayOf(today), sun = SC.addDaysISO(mon, 6);
+  $("wk-range").textContent = SC.prettyDate(mon) + " – " + SC.prettyDate(sun);
+  const box = $("week"); box.textContent = "";
+  const list = SESSIONS.filter(s => s.date >= mon && s.date <= sun);
+  if(!list.length){
+    box.appendChild(el("div",{class:"hint"},["No sessions published for this week. ", el("a",{href:"sc-sessions.html",text:"Plan sessions"})]));
+    return;
+  }
+  list.forEach(s => {
+    const who = ROSTER.filter(p => assigned(s, p.slug));
+    const logged = who.filter(p => ["done","partial"].indexOf(statusFor(s, p.slug)) >= 0).length;
+    const n = (ROWS[s.session_id] || []).length;
+    box.appendChild(el("a",{class:"week-row" + (s.date === today ? " today" : ""), href:"sc-sessions.html"},[
+      el("span",{class:"week-day",text:dayLabel(s.date) + (s.start_time ? " · " + s.start_time : "")}),
+      el("span",{class:"week-name",text:s.name}),
+      el("span",{class:"week-meta",text:n + (n === 1 ? " exercise" : " exercises") + " · " + who.length + (who.length === 1 ? " player" : " players") +
+        (s.date <= today ? " · " + logged + " logged" : "")})
+    ]));
+  });
+}
+
+/* ---------- needs attention ---------- */
+
+function buildAttention(){
+  const out = [], from7 = SC.addDaysISO(today, -6);
+  ROSTER.forEach(p => {
+    const r = rate4(p.slug);
+    if(r && r.n >= 2 && r.hit / r.n < 0.75)
+      out.push({p:p, tag:"Low participation", cls:"st-missed", why:r.hit + " of " + r.n + " assigned sessions logged over the last 4 weeks."});
+    SESSIONS.filter(s => s.date === today && statusFor(s, p.slug) === "todo")
+      .forEach(s => out.push({p:p, tag:"Not started", cls:"st-todo", why:s.name + " is today and nothing is logged yet."}));
+    LOG.filter(e => e.slug === p.slug && e.date >= from7 && e.rpe != null && e.rpe >= 9)
+      .slice(0, 1).forEach(e => out.push({p:p, tag:"High RPE", cls:"st-partial", why:"Rated " + e.rpe + " / 10 on " + SC.prettyDate(e.date) + " (" + e.exercise + ")."}));
+    SESSIONS.filter(s => s.date >= from7 && s.date <= today && assigned(s, p.slug)).forEach(s => {
+      (ROWS[s.session_id] || []).forEach(x => {
+        const name = (LIB[x.exercise_id] && LIB[x.exercise_id].name) || x.exercise;
+        const e = LOG.find(l => l.slug === p.slug && l.date === s.date && l.exercise.toLowerCase() === name.toLowerCase());
+        const want = Number(x.sets) || 0;
+        if(e && want && e.sets < want)
+          out.push({p:p, tag:"Under target", cls:"st-partial", why:name + " on " + SC.prettyDate(s.date) + ": " + e.sets + " of " + want + " sets logged."});
+      });
+    });
+  });
+  /* When half the squad or more share a flag, one squad line says more
+     than a row per player. */
+  const half = Math.max(2, Math.ceil(ROSTER.length / 2)), grouped = [];
+  ["Not started", "Low participation"].forEach(tag => {
+    const same = out.filter(a => a.tag === tag);
+    if(same.length < half) return;
+    same.forEach(a => out.splice(out.indexOf(a), 1));
+    grouped.push({squad:true, tag:tag, cls:same[0].cls, why: tag === "Not started"
+      ? same.length + " players have a session today with nothing logged yet."
+      : same.length + " players have logged fewer than 75% of their assigned sessions over the last 4 weeks."});
+  });
+  return grouped.concat(out);
+}
+
+function renderAttention(list){
+  const box = $("attention"); box.textContent = "";
+  if(!list.length){ box.appendChild(el("div",{class:"hint",style:"padding:10px 0",text:"Nobody flagged. Flags appear for low participation, a session not started, a high RPE, or fewer sets logged than prescribed."})); return; }
+  list.slice(0, 12).forEach(a => box.appendChild(el("div",{class:"att"},[
+    a.squad ? el("div",{class:"av",text:"All"}) : SC.avatar(a.p),
+    el("div",{class:"att-body"},[
+      el("div",{},[ el("span",{style:"font-weight:600;margin-right:8px",text:a.squad ? "Squad" : a.p.name}), el("span",{class:"chipst " + a.cls,text:a.tag}) ]),
+      el("div",{class:"att-why",text:a.why})
+    ])
+  ])));
+  if(list.length > 12) box.appendChild(el("div",{class:"hint",style:"padding:8px 0",text:"+" + (list.length - 12) + " more"}));
+}
+
+/* ---------- progression ---------- */
+
+function weekStarts(){ const mon = mondayOf(today), out = []; for(let i = WEEKS - 1; i >= 0; i--) out.push(SC.addDaysISO(mon, -7 * i)); return out; }
+function value(entries){
+  if(!entries.length) return null;
+  if(metric === "vol"){ const v = entries.reduce((a,e) => a + e.volume, 0); return v > 0 ? v : null; }
+  const tops = entries.filter(e => e.top != null);
+  if(!tops.length) return null;
+  if(metric === "e1rm") return Math.max.apply(null, tops.map(e => Math.round(e.top * (1 + e.reps / 30) * 2) / 2));
+  return Math.max.apply(null, tops.map(e => e.top));
+}
+function series(slug){
+  return weekStarts().map(w => { const end = SC.addDaysISO(w, 6);
+    return value(LOG.filter(e => e.slug === slug && e.exercise.toLowerCase() === exKey && e.date >= w && e.date <= end)); });
+}
+function niceStep(range){
+  const raw = range / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / mag;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+}
+
+function setupProgression(){
+  const counts = {}, names = {};
+  LOG.forEach(e => { const k = e.exercise.toLowerCase(); counts[k] = (counts[k] || 0) + 1; names[k] = e.exercise; });
+  const exs = Object.keys(counts).sort((a,b) => counts[b] - counts[a] || names[a].localeCompare(names[b]));
+  const selEx = $("sel-ex"); selEx.textContent = "";
+  exs.forEach(k => selEx.appendChild(el("option",{value:k,text:names[k]})));
+  const selP = $("sel-player"); selP.textContent = "";
+  ROSTER.forEach(p => selP.appendChild(el("option",{value:p.slug,text:p.name + (p.pos ? " · " + p.pos : "")})));
+
+  if(exs.length){
+    /* start on the player and exercise with the most history */
+    const best = {}; LOG.forEach(e => { const k = e.slug + "|" + e.exercise.toLowerCase(); best[k] = (best[k] || 0) + (e.top != null ? 1 : 0); });
+    const top = Object.keys(best).filter(k => ROSTER.some(p => p.slug === k.split("|")[0])).sort((a,b) => best[b] - best[a])[0];
+    player = top ? top.split("|")[0] : ROSTER[0].slug; exKey = top ? top.split("|")[1] : exs[0];
+  }else{ player = ROSTER.length ? ROSTER[0].slug : ""; exKey = ""; }
+  selP.value = player; selEx.value = exKey;
+  selP.onchange = () => { player = selP.value; renderProgression(); };
+  selEx.onchange = () => { exKey = selEx.value; renderProgression(); };
+  $("cmp").onchange = e => { compare = e.target.checked; renderProgression(); };
+  const mw = $("metrics");
+  const drawMetrics = () => { mw.textContent = ""; METRICS.forEach(m => mw.appendChild(el("button",{class:"chip",type:"button","aria-pressed":String(m[0] === metric),text:m[1],
+    onclick:() => { metric = m[0]; drawMetrics(); renderProgression(); }}))); };
+  drawMetrics();
+}
+
+function svg(tag, attrs, text){
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.keys(attrs || {}).forEach(k => e.setAttribute(k, attrs[k]));
+  if(text != null) e.textContent = text;
+  return e;
+}
+
+function renderProgression(){
+  const box = $("chart"), side = $("prog-side"), legend = $("legend");
+  box.textContent = ""; side.textContent = ""; legend.textContent = "";
+  const p = ROSTER.find(x => x.slug === player);
+  if(!p || !exKey){
+    box.appendChild(el("div",{class:"empty",text:"No sets have been logged yet. This chart fills in as players log their sessions."}));
+    return;
+  }
+  const weeks = weekStarts(), vals = series(player);
+  const all = ROSTER.map(q => series(q.slug));
+  const avg = weeks.map((w, i) => SC.mean(all.map(x => x[i]).filter(v => v != null)));
+  const have = vals.map((v, i) => ({v:v, i:i})).filter(x => x.v != null);
+  const first = p.name.split(" ")[0], exName = $("sel-ex").selectedOptions[0].textContent, mLabel = METRICS.find(m => m[0] === metric)[1];
+
+  side.appendChild(el("div",{class:"who"},[ SC.avatar(p), el("div",{},[ el("div",{class:"who-name",text:p.name}),
+    el("div",{class:"stat-s",text:[p.pos, p.num !== "" ? "#" + p.num : ""].filter(Boolean).join(" · ")}) ]) ]));
+
+  if(!have.length){
+    box.appendChild(el("div",{class:"empty",text:first + " has not logged " + exName + " in the last " + WEEKS + " weeks."}));
+  }else{
+    const pool = have.map(x => x.v).concat(compare ? avg.filter(v => v != null) : []);
+    const mn = Math.min.apply(null, pool), mx = Math.max.apply(null, pool);
+    const stp = niceStep(Math.max(mx - mn, 1)), lo = Math.max(0, Math.floor(mn / stp) * stp - stp), hi = Math.ceil(mx / stp) * stp + (mx % stp === 0 ? stp : 0);
+    const W = 720, H = 280, L = 52, R = 16, T = 14, B = 34;
+    const X = i => L + i * ((W - L - R) / (WEEKS - 1)), Y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+    const s = svg("svg",{viewBox:"0 0 " + W + " " + H, role:"img", "aria-label":exName + ", " + mLabel + ", " + p.name + ", last " + WEEKS + " weeks"});
+    for(let t = lo; t <= hi + 1e-6; t += stp){
+      s.appendChild(svg("line",{x1:L, x2:W - R, y1:Y(t), y2:Y(t), stroke:"rgba(250,249,246,0.07)"}));
+      s.appendChild(svg("text",{x:L - 8, y:Y(t) + 4, "text-anchor":"end", "font-size":11, fill:"rgba(250,249,246,0.5)"}, fmt(t)));
+    }
+    weeks.forEach((w, i) => { if(i % 2 === (WEEKS - 1) % 2) s.appendChild(svg("text",{x:X(i), y:H - 10, "text-anchor":"middle", "font-size":11, fill:"rgba(250,249,246,0.5)"}, SC.prettyDate(w).replace(/^\w+,? /, ""))); });
+    const path = pts => pts.map((q, n) => (n ? "L" : "M") + X(q.i).toFixed(1) + "," + Y(q.v).toFixed(1)).join(" ");
+    const avgPts = avg.map((v, i) => ({v:v, i:i})).filter(x => x.v != null);
+    if(compare && avgPts.length > 1) s.appendChild(svg("path",{d:path(avgPts), fill:"none", stroke:"rgba(250,249,246,0.55)", "stroke-width":2, "stroke-dasharray":"5 5"}));
+    if(have.length > 1) s.appendChild(svg("path",{d:path(have), fill:"none", stroke:"#4ade80", "stroke-width":2.5, "stroke-linejoin":"round"}));
+    have.forEach(q => s.appendChild(svg("circle",{cx:X(q.i), cy:Y(q.v), r:4.5, fill:"#4ade80", stroke:"#0f1f16", "stroke-width":2})));
+    const marker = svg("circle",{r:7, fill:"none", stroke:"#FAF9F6", "stroke-width":2, visibility:"hidden"}); s.appendChild(marker);
+    box.appendChild(s);
+    const tip = el("div",{class:"tip",hidden:true}); box.appendChild(tip);
+    /* one overlay for the whole chart: find the nearest logged week */
+    const move = ev => {
+      const r = s.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * W;
+      let near = have[0]; have.forEach(q => { if(Math.abs(X(q.i) - x) < Math.abs(X(near.i) - x)) near = q; });
+      marker.setAttribute("cx", X(near.i)); marker.setAttribute("cy", Y(near.v)); marker.setAttribute("visibility", "visible");
+      tip.textContent = "";
+      tip.appendChild(el("div",{text:"w/c " + SC.prettyDate(weeks[near.i])}));
+      tip.appendChild(el("b",{text:fmt(near.v) + " kg"}));
+      if(compare && avg[near.i] != null) tip.appendChild(el("div",{text:"Squad average " + fmt(avg[near.i]) + " kg"}));
+      tip.style.left = Math.min(Math.max(X(near.i) / W * 100, 14), 86) + "%"; tip.style.top = (Y(near.v) / H * 100) + "%"; tip.hidden = false;
+    };
+    s.addEventListener("pointermove", move); s.addEventListener("pointerdown", move);
+    s.addEventListener("pointerleave", () => { tip.hidden = true; marker.setAttribute("visibility", "hidden"); });
+
+    legend.appendChild(el("span",{},[ el("i"), first + " · " + mLabel ]));
+    if(compare) legend.appendChild(el("span",{},[ el("i",{class:"avg"}), "Squad average" ]));
+
+    const a = have[0], b = have[have.length - 1], diff = b.v - a.v, best = have.reduce((m, q) => q.v > m.v ? q : m, have[0]);
+    side.appendChild(el("div",{},[ el("div",{class:"stat-l",text:"Change since " + SC.prettyDate(weeks[a.i]).replace(/^\w+,? /, "")}),
+      el("div",{class:"stat-v " + (diff > 0 ? "t-good" : diff < 0 ? "t-watch" : ""),text:(diff > 0 ? "+" : "") + fmt(diff) + " kg"}),
+      el("div",{class:"stat-s",text:(a.v ? (diff >= 0 ? "+" : "") + Math.round(100 * diff / a.v) + "% · " : "") + fmt(a.v) + " → " + fmt(b.v)}) ]));
+    side.appendChild(el("div",{},[ el("div",{class:"stat-l",text:"Best"}), el("div",{class:"stat-v",text:fmt(best.v) + " kg"}),
+      el("div",{class:"stat-s",text:"w/c " + SC.prettyDate(weeks[best.i]).replace(/^\w+,? /, "")}) ]));
+  }
+  side.appendChild(el("div",{},[ el("div",{class:"stat-l",text:"Logged"}), el("div",{class:"stat-v",text:have.length + " / " + WEEKS}),
+    el("div",{class:"stat-s",text:"weeks with this exercise logged"}) ]));
+
+  /* what this player is prescribed for this exercise this week */
+  const mon = mondayOf(today), sun = SC.addDaysISO(mon, 6);
+  let presc = "";
+  SESSIONS.filter(s => s.date >= mon && s.date <= sun && assigned(s, player)).some(s =>
+    (ROWS[s.session_id] || []).some(x => {
+      const name = ((LIB[x.exercise_id] && LIB[x.exercise_id].name) || x.exercise).toLowerCase();
+      if(name !== exKey) return false;
+      presc = [SC.prescription(x), SC.loadText(x), x.rest_s ? "rest " + x.rest_s + "s" : ""].filter(Boolean).join(" · ");
+      return true;
+    }));
+  side.appendChild(el("div",{},[ el("div",{class:"stat-l",text:"Prescribed this week"}),
+    el("div",{class:"stat-s",style:"margin-top:4px;color:var(--offwhite)",text:presc || "Not in a published session this week"}) ]));
+}
+
+/* ---------- participation ---------- */
+
+function renderParticipation(){
+  const box = $("part"); box.textContent = "";
+  const mon = mondayOf(today), sun = SC.addDaysISO(mon, 6);
+  const wk = SESSIONS.filter(s => s.date >= mon && s.date <= sun);
+  if(!wk.length && !SESSIONS.length){ box.appendChild(el("div",{class:"empty",style:"margin:16px",text:"No sessions have been published yet."})); return; }
+  const rows = ROSTER.map(p => ({p:p, r:rate4(p.slug)}))
+    .sort((a,b) => (a.r ? a.r.hit / a.r.n : 2) - (b.r ? b.r.hit / b.r.n : 2) || a.p.name.localeCompare(b.p.name));
+  const table = el("table",{class:"part"},[
+    el("thead",{},[ el("tr",{},[ el("th",{text:"Player"}) ].concat(wk.map(s => el("th",{text:dayLabel(s.date) + " · " + s.name})), [ el("th",{text:"4-week rate"}) ])) ]),
+    el("tbody",{}, rows.map(x => el("tr",{},[
+      el("td",{},[ el("button",{class:"pl",type:"button",onclick:() => { player = x.p.slug; $("sel-player").value = player; renderProgression(); $("prog-sec").scrollIntoView({behavior:"smooth",block:"start"}); }},[
+        SC.avatar(x.p), el("span",{},[ el("div",{style:"font-weight:600",text:x.p.name}), el("div",{class:"stat-s",text:x.p.pos}) ]) ]) ])
+    ].concat(wk.map(s => { const st = statusFor(s, x.p.slug); return el("td",{},[ el("span",{class:"chipst st-" + st,text:ST[st]}) ]); }),
+      [ el("td",{},[ x.r ? el("span",{class:"rate " + (x.r.hit / x.r.n >= 0.9 ? "t-good" : x.r.hit / x.r.n >= 0.75 ? "t-watch" : "t-bad"),text:Math.round(100 * x.r.hit / x.r.n) + "%"})
+                         : el("span",{class:"t-gray",text:"—"}) ]) ]))))
+  ]);
+  box.appendChild(table);
+}
+
+(async function(){
+  try{
+    const setUp = await load();
+    const next = SESSIONS.find(s => s.date >= today);
+    $("page-sub").textContent = new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"}) + (next && next.phase ? " · " + next.phase : "");
+    if(!setUp) $("banners").appendChild(el("div",{class:"banner"},[
+      el("span",{text:"No S&C sessions have been set up in the hub yet. Build and publish the first one to start filling this page."}),
+      el("a",{class:"btn btn-sm btn-primary",href:"sc-sessions.html",text:"Plan sessions"}) ]));
+    const attention = buildAttention();
+    renderKPIs(attention); renderWeek(); renderAttention(attention);
+    setupProgression(); renderProgression(); renderParticipation();
+  }catch(e){
+    console.error(e);
+    $("page-sub").textContent = "";
+    $("banners").appendChild(el("div",{class:"banner err",text:"Couldn't load the S&C overview: " + e.message}));
+  }
+})();
+})();
+</script>
+</body>
+</html>

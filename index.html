@@ -10,60 +10,75 @@
   <link rel="apple-touch-icon" href="/icon-192.jpg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Surrey 89ers — Performance Hub</title>
+<link rel="stylesheet" href="/sc.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --green:#008348;--green-dark:#005c33;--green-deep:#003d22;--green-dim:rgba(0,131,72,0.15);
-  --offwhite:#FAF9F6;--offwhite-mid:rgba(250,249,246,0.6);--muted:rgba(250,249,246,0.4);
-  --card:#0f1f16;--card2:#152a1c;--border:rgba(0,131,72,0.2);--border-soft:rgba(250,249,246,0.07);
-  --red:#e05555;--amber:#f59e0b;
-}
-body{font-family:'Inter',sans-serif;background:#080f0b;color:var(--offwhite);min-height:100vh}
-
 #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(135deg,#002a18 0%,#003d22 50%,#001a0e 100%)}
 .login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:360px;max-width:100%;text-align:center}
 .login-logo{width:72px;height:72px;border-radius:50%;margin:0 auto 20px;display:block;object-fit:cover}
 .login-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px}
 .login-sub{font-size:12px;color:var(--muted);margin-bottom:32px;letter-spacing:1px;text-transform:uppercase}
-.login-input{width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--offwhite);font-size:16px;font-family:'Inter',sans-serif;margin-bottom:12px;outline:none}
+.login-input{width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--offwhite);font-size:16px;margin-bottom:12px;outline:none}
 .login-input:focus{border-color:var(--green)}
 .login-btn{width:100%;background:var(--green);border:none;border-radius:8px;padding:13px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.5px}
 .login-btn:hover{background:var(--green-dark)}
 .login-error{font-size:12px;color:var(--red);margin-top:8px;display:none}
-
 #app{display:none}
 
-.topbar{background:#080f0b;border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100}
-.topbar-left{display:flex;align-items:center;gap:14px;min-width:0}
-.topbar-logo{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700}
-.topbar-sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
-.topbar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
-.btn{font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;cursor:pointer;border:1px solid var(--border-soft);background:var(--card);color:var(--offwhite);transition:all 0.15s;text-decoration:none;font-family:inherit;white-space:nowrap}
-.btn:hover{background:var(--card2);border-color:var(--border)}
+/* headline numbers */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--border-soft);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:92px}
+.kpi-l{font-size:9.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--offwhite-mid)}
+.kpi-v{font-family:'Space Grotesk',sans-serif;font-size:25px;font-weight:700;line-height:1.1;margin-top:8px}
+.kpi-v small{font-size:14px;font-weight:600;color:var(--muted)}
+.kpi-s{font-size:11.5px;color:var(--offwhite-mid);margin-top:5px}
 
-.main{padding:24px 28px;max-width:1240px;width:100%;margin:0 auto}
-.page-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;letter-spacing:-0.3px}
-.page-sub{font-size:12px;color:var(--muted);margin-top:3px;margin-bottom:24px}
+/* player status */
+.status-card{overflow:hidden;margin-bottom:20px}
+.status-head{padding:13px 16px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.status-head a{font-size:12px;font-weight:600;text-decoration:none}
+.st-grid{display:grid;grid-template-columns:minmax(170px,1.3fr) minmax(150px,1.1fr) minmax(170px,1.5fr) minmax(120px,.9fr) minmax(140px,1.1fr)}
+.st-row{display:contents}
+.st-row > div{padding:11px 14px;border-bottom:1px solid var(--border-soft);min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.st-row:last-child > div{border-bottom:0}
+.st-head > div{font-size:9.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--offwhite-mid);padding-top:9px;padding-bottom:9px;background:rgba(0,0,0,0.15)}
+.st-player{flex-direction:row !important;align-items:center;justify-content:flex-start !important;gap:11px !important}
+.lvl{width:4px;align-self:stretch;border-radius:2px;flex:none;background:var(--muted)}
+.lvl-bad{background:var(--red)}.lvl-watch{background:var(--amber)}.lvl-good{background:var(--green-text)}
+.av{width:34px;height:34px;border-radius:50%;flex:none;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--green),var(--green-dark));display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%}
+.p-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-sub{font-size:11px;color:var(--offwhite-mid)}
+.cell-label{display:none;font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--offwhite-mid)}
+.pills{display:flex;gap:5px;flex-wrap:wrap}
+.pill{font-size:10px;font-weight:700;letter-spacing:.3px;padding:3px 8px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
+.pill small{font-size:8.5px;font-weight:600;opacity:.75;margin-right:4px;letter-spacing:.5px;text-transform:uppercase}
+.c-good{color:var(--green-text);background:rgba(74,222,128,0.10);border-color:rgba(74,222,128,0.25)}
+.c-watch{color:var(--amber);background:rgba(245,158,11,0.10);border-color:rgba(245,158,11,0.3)}
+.c-bad{color:#f08a8a;background:rgba(224,85,85,0.12);border-color:rgba(224,85,85,0.35)}
+.c-gray{color:var(--offwhite-mid);background:rgba(250,249,246,0.04);border-color:var(--border-soft)}
+.big{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700}
+.t-good{color:var(--green-text)}.t-watch{color:var(--amber)}.t-bad{color:#f08a8a}.t-gray{color:var(--offwhite-mid)}
+.why{font-size:11.5px;color:var(--offwhite-mid);line-height:1.35}
+.note{font-size:11.5px;font-style:italic;color:var(--offwhite-mid);line-height:1.35}
+.line{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
 
-.group-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;margin:22px 0 10px}
-.group-label:first-child{margin-top:0}
-.group-label::before{content:'';display:block;width:3px;height:12px;background:var(--green);border-radius:2px}
-.tile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-.tile{background:var(--card);border:1px solid var(--border-soft);border-radius:10px;padding:16px;display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;min-height:76px;transition:border-color .15s,transform .15s}
-.tile:hover{border-color:var(--green);transform:translateY(-2px)}
-.tile-icon{width:42px;height:42px;border-radius:10px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.tile-body{flex:1;min-width:0}
-.tile-label{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600}
-.tile-sub{font-size:11.5px;color:var(--offwhite-mid);margin-top:3px;line-height:1.35}
-.tile-arrow{font-size:15px;color:var(--green);flex-shrink:0}
+/* the two sections */
+.sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.section{display:flex;align-items:center;gap:16px;padding:22px 20px;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s;min-height:110px}
+.section:hover{border-color:var(--green);transform:translateY(-2px)}
+.section-icon{width:54px;height:54px;border-radius:12px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:26px;flex:none}
+.section-title{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700}
+.section-sub{font-size:12.5px;color:var(--offwhite-mid);margin-top:4px;line-height:1.4}
+.section-arrow{margin-left:auto;font-size:18px;color:var(--green-text)}
 
-@media (max-width:720px){
-  .topbar{padding:0 14px}
-  .main{padding:18px 14px}
-  .tile-grid{grid-template-columns:1fr}
-  .hide-narrow{display:none}
+@media (max-width:860px){
+  .st-grid{display:block}
+  .st-row.st-head{display:none}
+  .st-row{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border-soft);padding:6px 0}
+  .st-row:last-child{border-bottom:0}
+  .st-row > div{border-bottom:0;padding:7px 14px;justify-content:flex-start}
+  .st-row > .st-player{grid-column:1/-1}
+  .cell-label{display:block}
 }
 </style>
 </head>
@@ -86,22 +101,49 @@ body{font-family:'Inter',sans-serif;background:#080f0b;color:var(--offwhite);min
     <img class="topbar-logo" src="/icon-192.jpg" alt="89ers">
     <div><div class="topbar-title">Surrey 89ers</div><div class="topbar-sub">Performance Hub · 2026-27</div></div>
   </div>
-  <div class="topbar-actions">
-    <a class="btn hide-narrow" id="coaches-link" href="#">Coaches Hub ↗</a>
-    <button class="btn" onclick="logout()">Sign out</button>
-  </div>
+  <div class="topbar-actions"><button class="btn btn-sm" onclick="logout()">Sign out</button></div>
 </div>
-<div class="main">
-  <div class="page-title">Performance Dashboard</div>
-  <div class="page-sub" id="page-date"></div>
-  <div id="sections"></div>
+<div class="layout">
+  <div class="sidenav" id="sidenav"></div>
+  <div class="main">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Performance Dashboard</div>
+        <div class="page-sub" id="page-date"></div>
+      </div>
+    </div>
+
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <section class="card status-card" aria-labelledby="status-h">
+      <div class="status-head">
+        <h2 class="card-title" id="status-h">Player status</h2>
+        <span class="hint" id="status-note">Worst first · today</span>
+      </div>
+      <div id="status-body"><div class="empty" style="border:0">Loading player status…</div></div>
+    </section>
+
+    <div class="sections">
+      <a class="card section" href="sc-overview.html">
+        <div class="section-icon">🏋</div>
+        <div><div class="section-title">Strength &amp; Conditioning</div><div class="section-sub" id="sc-sub">Overview, sessions and the exercise library</div></div>
+        <div class="section-arrow">→</div>
+      </a>
+      <a class="card section" href="therapy.html">
+        <div class="section-icon">🩺</div>
+        <div><div class="section-title">Therapy</div><div class="section-sub">Clinic notes · coming soon</div></div>
+        <div class="section-arrow">→</div>
+      </a>
+    </div>
+  </div>
 </div>
 </div>
 
+<script src="/sc.js"></script>
 <script src="/hub.js"></script>
 <script>
 /* Same password and the same session key as the Coaches Hub pages, so one
-   sign-in covers the dashboard and every mirrored page at this address.
+   sign-in covers the dashboard and every other page at this address.
    If the Coaches Hub password changes, change it here too. */
 const PASSWORD="89ers2627";
 
@@ -135,39 +177,166 @@ function showApp(){
   init();
 }
 
-function el(tag,cls,text){
-  const e=document.createElement(tag);
-  if(cls) e.className=cls;
-  if(text!=null) e.textContent=text;
-  return e;
+const el=SC.el, $=id=>document.getElementById(id);
+const CLS={0:"good",1:"watch",2:"bad",3:"bad"};
+
+/* Each source loads on its own: if one is unreachable its column says so
+   and the rest of the table still shows. */
+async function settle(p){ try{ return {ok:true, v:await p}; }catch(e){ console.error(e); return {ok:false, v:null}; } }
+
+async function init(){
+  PERF_HUB.buildNav($("sidenav"));
+  $("page-date").textContent=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+
+  const [roster, physio, well, load, sessions, rows, log]=await Promise.all([
+    settle(SC.loadRoster()), settle(SC.loadPhysio()), settle(SC.loadWellnessToday()), settle(SC.loadACWR()),
+    settle(SC.readTab("SESSIONS")), settle(SC.readTab("SESSION EXERCISES")), settle(SC.loadStrengthLog())
+  ]);
+  if(!roster.ok || !roster.v.length){
+    $("status-body").textContent="";
+    $("status-body").appendChild(el("div",{class:"empty",style:"border:0",text:"The squad list could not be read from ROSTER. Try again in a moment."}));
+    return;
+  }
+
+  const today=SC.todayISO();
+  const todays=sessions.ok ? sessions.v.rows.filter(s=>!SC.isTrue(s.archived) && s.status==="published" && s.date===today) : [];
+  const exCount={}; if(rows.ok) rows.v.rows.forEach(r=>exCount[r.session_id]=(exCount[r.session_id]||0)+1);
+  const loggedToday={}; if(log.ok) log.v.filter(e=>e.date===today).forEach(e=>loggedToday[e.slug]=(loggedToday[e.slug]||0)+1);
+
+  const people=roster.v.map(p=>{
+    const ph=physio.ok ? (physio.v[SC.nameKey(p.name)]||null) : null;
+    const w=well.ok ? (well.v[p.slug]||null) : null;
+    const l=load.ok ? (load.v[p.slug]||null) : null;
+    const mine=todays.filter(s=>(","+s.players+",").indexOf(","+p.slug+",")>=0);
+    let bad=0, watch=0, any=false;
+    if(ph){ const m=Math.max(ph.si,ph.sg); if(m>=0) any=true; if(m>=2) bad++; else if(m===1) watch++; }
+    if(w){ any=true;
+      if(w.treatment || w.flags.some(f=>f.level==="bad")) bad++;
+      else if(w.flags.length || w.note) watch++; }
+    if(l && l.acwr!=null){ any=true; if(l.status.cls==="bad") bad++; else if(l.status.cls==="watch") watch++; }
+    const level=bad?"bad":watch?"watch":any?"good":"gray";
+    return {p, ph, w, l, mine, bad, watch, level};
+  });
+  const rank={bad:0,watch:1,good:2,gray:3};
+  people.sort((a,b)=>rank[a.level]-rank[b.level] || b.bad-a.bad || b.watch-a.watch || a.p.name.localeCompare(b.p.name));
+
+  renderKPIs(people, {physio:physio.ok, well:well.ok, load:load.ok});
+  renderStatus(people, {physio:physio.ok, well:well.ok, load:load.ok, sc:sessions.ok && sessions.v.setUp}, exCount, loggedToday);
+
+  if(sessions.ok && sessions.v.setUp){
+    $("sc-sub").textContent = todays.length
+      ? "Today: " + todays.map(s=>s.name).join(", ")
+      : "No S&C session published for today";
+  }
 }
 
-function init(){
-  document.getElementById("page-date").textContent=
-    new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  document.getElementById("coaches-link").href=PERF_HUB.coachesHub;
+function kpi(label, value, small, sub, cls){
+  return el("div",{class:"kpi"},[
+    el("div",{class:"kpi-l",text:label}),
+    el("div",{},[
+      el("div",{class:"kpi-v"+(cls?" t-"+cls:"")},[ value, small?el("small",{text:" "+small}):null ]),
+      el("div",{class:"kpi-s",text:sub})
+    ])
+  ]);
+}
 
-  // Tiles come from the one section list in hub.js, grouped as the nav is.
-  const host=document.getElementById("sections");
-  host.textContent="";
-  let group=null, grid=null;
-  PERF_HUB.sections.forEach(s=>{
-    if(s.group!==group){
-      group=s.group;
-      host.appendChild(el("div","group-label",group));
-      grid=el("div","tile-grid");
-      host.appendChild(grid);
+function renderKPIs(people, ok){
+  const box=$("kpi-row"); box.textContent="";
+  const n=people.length;
+
+  if(ok.physio){
+    const set=people.filter(x=>x.ph && x.ph.si>=0 && x.ph.sg>=0);
+    const fine=set.filter(x=>x.ph.si===0 && x.ph.sg===0).length;
+    const out=people.filter(x=>x.ph && Math.max(x.ph.si,x.ph.sg)>=2).length;
+    const unset=n-set.length;
+    box.appendChild(kpi("Healthy & available", String(fine), "/ "+n,
+      [out?out+" out or doubtful":"Nobody out or doubtful", unset?unset+" not set":""].filter(Boolean).join(" · "), out?"watch":""));
+  }else box.appendChild(kpi("Healthy & available","—","","Physio feed unreachable","gray"));
+
+  if(ok.well){
+    const c=people.filter(x=>x.w).length;
+    box.appendChild(kpi("Checked in today", String(c), "/ "+n, c===n?"Full squad":(n-c)+" still to check in"));
+    const tr=people.filter(x=>x.w && x.w.treatment).length;
+    const fl=people.filter(x=>x.w && (x.w.flags.length||x.w.note)).length;
+    box.appendChild(kpi("Treatment requests", String(tr), "", fl?fl+" with a wellness flag or note":"No wellness flags or notes", tr?"bad":""));
+  }else{
+    box.appendChild(kpi("Checked in today","—","","Wellness log unreachable","gray"));
+  }
+
+  if(ok.load){
+    const have=people.filter(x=>x.l && x.l.acwr!=null);
+    const off=have.filter(x=>x.l.status.cls!=="good").length;
+    box.appendChild(kpi("Load outside 0.8–1.3", String(off), "/ "+have.length, have.length?(off?"ACWR high or low":"Everyone in the sweet spot"):"No sessions logged yet", off?"watch":""));
+  }else box.appendChild(kpi("Load outside 0.8–1.3","—","","Load log unreachable","gray"));
+}
+
+function cell(label, kids){ return el("div",{},[ el("span",{class:"cell-label",text:label}) ].concat(kids)); }
+
+function renderStatus(people, ok, exCount, loggedToday){
+  const body=$("status-body"); body.textContent="";
+  const grid=el("div",{class:"st-grid"});
+  grid.appendChild(el("div",{class:"st-row st-head"},["Player","Availability","Wellness today","Training load","S&C today"].map(t=>el("div",{text:t}))));
+
+  people.forEach(x=>{
+    const p=x.p;
+    /* availability */
+    let avail;
+    if(!ok.physio) avail=[el("span",{class:"why",text:"Physio feed unreachable"})];
+    else if(!x.ph) avail=[el("div",{class:"pills"},[el("span",{class:"pill c-gray",text:"Not on physio sheet"})])];
+    else avail=[el("div",{class:"pills"},[
+      el("span",{class:"pill c-"+(x.ph.si<0?"gray":CLS[x.ph.si])},[el("small",{text:"Injury"}), x.ph.injury||"Not set"]),
+      el("span",{class:"pill c-"+(x.ph.sg<0?"gray":CLS[x.ph.sg])},[el("small",{text:"Game"}), x.ph.game||"Not set"])
+    ])];
+
+    /* wellness */
+    let well;
+    if(!ok.well) well=[el("span",{class:"why",text:"Wellness log unreachable"})];
+    else if(!x.w) well=[el("span",{class:"big t-gray",text:"—"}), el("span",{class:"why",text:"Not checked in yet"})];
+    else{
+      const worst=x.w.flags[0];
+      const cls=x.w.flags.some(f=>f.level==="bad")?"bad":x.w.flags.length?"watch":"good";
+      const word=cls==="bad"?"Flag":cls==="watch"?"Monitor":"Good";
+      well=[ el("div",{class:"line"},[
+          el("span",{class:"big t-"+cls,text:x.w.avg==null?"—":x.w.avg.toFixed(1)}),
+          el("span",{class:"why",text:word}),
+          x.w.treatment?el("span",{class:"pill c-bad",text:"⚕ Treatment"}):null ]) ];
+      if(worst){
+        const more=x.w.flags.length-1;
+        well.push(el("span",{class:"why",text:worst.label+" "+worst.now.toFixed(1)+" · "+worst.why+(more>0?" · +"+more+" more":"")}));
+      }
+      if(x.w.note) well.push(el("span",{class:"note",text:"“"+x.w.note+"”"}));
     }
-    const a=el("a","tile");
-    a.href=s.href;
-    a.appendChild(el("div","tile-icon",s.icon));
-    const body=el("div","tile-body");
-    body.appendChild(el("div","tile-label",s.label));
-    body.appendChild(el("div","tile-sub",s.sub));
-    a.appendChild(body);
-    a.appendChild(el("div","tile-arrow","→"));
-    grid.appendChild(a);
+
+    /* load */
+    let load;
+    if(!ok.load) load=[el("span",{class:"why",text:"Load log unreachable"})];
+    else if(!x.l || x.l.acwr==null) load=[el("span",{class:"big t-gray",text:"—"}), el("span",{class:"why",text:"No sessions logged"})];
+    else load=[ el("div",{class:"line"},[
+      el("span",{class:"big t-"+x.l.status.cls,text:x.l.acwr.toFixed(2)}),
+      el("span",{class:"why",text:x.l.status.label}) ]) ];
+
+    /* S&C today */
+    let sc;
+    if(!ok.sc) sc=[el("span",{class:"why",text:"No sessions set up yet"})];
+    else if(!x.mine.length) sc=[el("span",{class:"why",text:"None today"})];
+    else{
+      const total=x.mine.reduce((a,s)=>a+(exCount[s.session_id]||0),0), done=loggedToday[p.slug]||0;
+      sc=[ el("span",{class:"p-name",text:x.mine.map(s=>s.name).join(", ")}),
+           el("span",{class:"why t-"+(done>=total&&total?"good":done?"watch":"gray"),
+             text:done ? "Logged "+Math.min(done,total)+" of "+total+" exercises" : "Nothing logged yet"}) ];
+    }
+
+    grid.appendChild(el("div",{class:"st-row"},[
+      el("div",{class:"st-player"},[
+        el("span",{class:"lvl lvl-"+x.level}), SC.avatar(p),
+        el("div",{style:"min-width:0"},[
+          el("div",{class:"p-name",text:p.name}),
+          el("div",{class:"p-sub",text:[p.pos, p.num!==""?"#"+p.num:""].filter(Boolean).join(" · ")}) ])
+      ]),
+      cell("Availability", avail), cell("Wellness today", well), cell("Training load", load), cell("S&C today", sc)
+    ]));
   });
+  body.appendChild(grid);
 }
 
 if(sessionStorage.getItem("89ers_auth")==="1") showApp();

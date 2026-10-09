@@ -1,10 +1,12 @@
 /* ============================================================
-   Surrey 89ers Performance Hub — shared code for the S&C pages
-   (Exercise Library, Sessions).
+   Surrey 89ers Performance Hub — shared code for the hub's own pages
+   (Dashboard, S&C Overview, Sessions, Exercise Library).
    ------------------------------------------------------------
    Reads:  the Strength Program sheet (tabs EXERCISES, SESSIONS,
-           SESSION EXERCISES) and ROSTER on the Player Portals sheet,
-           as live CSV, by tab name and header name.
+           SESSION EXERCISES); ROSTER, WELLNESS LOG, LOAD LOG and
+           STRENGTH LOG on the Player Portals sheet; and the physio's
+           published three-column status feed. All as live CSV, by tab
+           name and header name.
    Writes: the Player Portal Endpoint (Apps Script), request types
            starting "sc_" — see Strength.gs in that script project.
 
@@ -17,7 +19,7 @@
   var file = location.pathname.split("/").pop() || "index.html";
   var authed = false;
   try { authed = sessionStorage.getItem("89ers_auth") === "1"; } catch (e) {}
-  if (!authed) { location.replace("index.html?next=" + encodeURIComponent(file + location.search)); return; }
+  if (!authed && file !== "index.html") { location.replace("index.html?next=" + encodeURIComponent(file + location.search)); return; }
 
   var STRENGTH_SHEET_ID = "1oeX8mJsqdCFB2u-DXjBnpRb7SLiYyml2x133sn3vXqg";
   var ROSTER_SHEET_ID   = "1NqYAMc7L_yzaiTlms6SpjvhhoJqg19n5XYtj7IGcJqg";
@@ -126,6 +128,177 @@
     }).filter(function (p) { return p.slug && p.slug !== "slug" && p.active; });
   }
 
+  /* ---------- player status data (dashboard) ----------
+     The same sources and the same rules as the Coaches Hub pages, so a
+     player shows the same status in both hubs. */
+
+  var PHOTO_BASE = "https://surrey-89ers-players.vercel.app/photos/";
+  /* The physio's sheet: ONLY the published "Dashboard Feed" tab
+     (player, injury_status, game_status) is read, never the working tabs. */
+  var PHYSIO_STATUS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgZ2Qfo4z1nhk_7IbG2OMRwtAwWPjqZlTMMsNNvQ6z108QAIlCQVKyHaBE5Z9nVeOf7HKy7W-CT1fm/pub?gid=56246200&single=true&output=csv";
+  var PHYSIO_SHEET_EDIT = "https://docs.google.com/spreadsheets/d/1-F38wiGnGwZzVoK9vKDQQiax3yu_UJ-1MTfZvYjGrw0/edit";
+
+  function todayISO() { return isoDate(new Date()); }
+  function addDaysISO(iso, n) { var d = parseDate(iso); d.setDate(d.getDate() + n); return isoDate(d); }
+  function mean(xs) { return xs.length ? xs.reduce(function (a, b) { return a + b; }, 0) / xs.length : null; }
+  function nameKey(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+  function initials(name) { return String(name || "").split(" ").slice(0, 2).map(function (w) { return w[0] || ""; }).join("").toUpperCase(); }
+
+  /* Reads a log tab on the Player Portals sheet into objects keyed by
+     column name. Header names first; the known order is the fallback
+     for headers Google has blanked. */
+  async function readLog(tab, cols) {
+    var res = await fetch(tabURL(ROSTER_SHEET_ID, tab));
+    if (!res.ok) throw new Error("Could not read " + tab + " (" + res.status + ")");
+    var rows = parseCSV(await res.text()).filter(function (r) { return r.some(function (c) { return c.trim() !== ""; }); });
+    if (rows.length < 2) return [];
+    var head = rows[0].map(function (h) { return h.toLowerCase().replace(/[^a-z_]/g, ""); });
+    /* A wrong or missing tab comes back as the sheet's first tab; its
+       rows are dropped below because they carry no yyyy-mm-dd date. */
+    var at = {};
+    cols.forEach(function (k, n) { var f = head.indexOf(k); at[k] = f >= 0 ? f : n; });
+    return rows.slice(1).map(function (r) {
+      var o = {};
+      cols.forEach(function (k) { o[k] = (r[at[k]] === undefined ? "" : String(r[at[k]])).trim(); });
+      o.slug = (o.slug || "").toLowerCase();
+      return o;
+    }).filter(function (o) {
+      o.date = o.date.slice(0, 10);
+      return o.slug && o.slug !== "slug" && /^\d{4}-\d{2}-\d{2}$/.test(o.date);
+    });
+  }
+
+  /* --- physio availability: severity 0 fine, 1 watch, 2 doubtful, 3 out, -1 not set --- */
+  var INJURY_SEV = { "healthy": 0, "questionable": 1, "day to day": 1, "day-to-day": 1, "doubtful": 2, "out": 3 };
+  var GAME_SEV = { "available": 0, "probable": 1, "questionable": 1, "doubtful": 2, "out": 3 };
+  function sevOf(map, v) { var k = String(v || "").trim().toLowerCase(); if (!k) return -1; return k in map ? map[k] : 1; }
+
+  /* -> { byName: { namekey: {injury, game, si, sg} }, ok } */
+  async function loadPhysio() {
+    var res = await fetch(PHYSIO_STATUS_CSV + "&cachebust=" + Date.now());
+    if (!res.ok) throw new Error("physio feed " + res.status);
+    var rows = parseCSV(await res.text());
+    var norm = function (h) { return String(h || "").toLowerCase().replace(/[^a-z]/g, ""); };
+    var hi = -1;
+    for (var i = 0; i < rows.length; i++) { if (rows[i].some(function (c) { return norm(c) === "player"; })) { hi = i; break; } }
+    if (hi < 0) throw new Error("physio feed has no player column");
+    var head = rows[hi].map(norm), iP = head.indexOf("player"), iI = head.indexOf("injurystatus"), iG = head.indexOf("gamestatus");
+    var byName = {};
+    rows.slice(hi + 1).forEach(function (r) {
+      var name = (r[iP] || "").trim(); if (!name) return;
+      var injury = iI >= 0 ? (r[iI] || "").trim() : "", game = iG >= 0 ? (r[iG] || "").trim() : "";
+      byName[nameKey(name)] = { name: name, injury: injury, game: game, si: sevOf(INJURY_SEV, injury), sg: sevOf(GAME_SEV, game) };
+    });
+    return byName;
+  }
+
+  /* --- wellness: same thresholds as the Squad Wellness page --- */
+  var WELLNESS_COLS = ["timestamp", "date", "slug", "name", "sleep_quality", "soreness", "mood", "sleep_duration", "stress", "energy", "treatment", "note"];
+  var METRICS = [["sleep_quality", "sleep quality"], ["soreness", "soreness"], ["mood", "mood"], ["sleep_duration", "sleep duration"], ["stress", "stress"], ["energy", "energy"]];
+  var LOW_HARD = 2.5, LOW_SOFT = 3.5, DROP = 1.0, MIN_HIST = 4, NORM_DAYS = 28;
+
+  /* -> { slug: { checked, avg, flags:[{label, now, norm, level, why}], treatment, note } } for today */
+  async function loadWellnessToday() {
+    var rows = await readLog("WELLNESS LOG", WELLNESS_COLS);
+    var today = todayISO(), from = addDaysISO(today, -NORM_DAYS), by = {};
+    rows.forEach(function (r) {
+      if (r.date < from || r.date > today) return;
+      var e = { date: r.date, treatment: /^(yes|true|y)$/i.test(r.treatment), note: r.note };
+      METRICS.forEach(function (m) { var v = parseFloat(r[m[0]]); e[m[0]] = isNaN(v) ? null : v; });
+      (by[r.slug] = by[r.slug] || []).push(e);
+    });
+    var out = {};
+    Object.keys(by).forEach(function (slug) {
+      var mine = by[slug], todays = mine.filter(function (e) { return e.date === today; });
+      if (!todays.length) return;
+      var flags = [], nowVals = [];
+      METRICS.forEach(function (m) {
+        var now = mean(todays.map(function (e) { return e[m[0]]; }).filter(function (v) { return v != null; }));
+        if (now == null) return;
+        nowVals.push(now);
+        var prior = mine.filter(function (e) { return e.date !== today; }).map(function (e) { return e[m[0]]; }).filter(function (v) { return v != null; });
+        var norm = mean(prior), level = null, why = "";
+        if (now <= LOW_HARD) { level = "bad"; why = "Low score"; }
+        else if (norm != null && prior.length >= MIN_HIST && (norm - now) >= DROP) { level = "watch"; why = "Down on their own norm"; }
+        else if (now < LOW_SOFT) { level = "watch"; why = "Below par"; }
+        if (level) flags.push({ label: m[1], now: now, norm: norm, level: level, why: why });
+      });
+      flags.sort(function (a, b) { return a.now - b.now; });
+      var last = todays[todays.length - 1];
+      out[slug] = { checked: true, avg: mean(nowVals), flags: flags,
+        treatment: todays.some(function (e) { return e.treatment; }), note: last.note || "" };
+    });
+    return out;
+  }
+
+  /* --- training load: the same EWMA maths as the Training Load page --- */
+  var LOAD_COLS = ["timestamp", "date", "time", "session_type", "slug", "name", "duration_min", "rpe", "load_au", "note"];
+  var ACUTE_ALPHA = 2 / (7 + 1), CHRONIC_ALPHA = 2 / (28 + 1), BAND_LOW = 0.8, BAND_HIGH = 1.3;
+
+  function acwrStatus(v) {
+    if (v == null) return { cls: "gray", label: "No data" };
+    if (v > BAND_HIGH) return { cls: v > 1.5 ? "bad" : "watch", label: "High" };
+    if (v < BAND_LOW) return { cls: v < 0.5 ? "bad" : "watch", label: "Low" };
+    return { cls: "good", label: "Sweet spot" };
+  }
+  /* -> { slug: { acwr, status, last } } */
+  async function loadACWR() {
+    var rows = await readLog("LOAD LOG", LOAD_COLS), by = {};
+    rows.forEach(function (r) {
+      var load = parseFloat(r.load_au);
+      if (isNaN(load)) load = (parseFloat(r.duration_min) || 0) * (parseFloat(r.rpe) || 0);
+      (by[r.slug] = by[r.slug] || {})[r.date] = ((by[r.slug] || {})[r.date] || 0) + load;
+    });
+    var out = {}, end = todayISO();
+    Object.keys(by).forEach(function (slug) {
+      var dates = Object.keys(by[slug]).sort(), acute = null, chronic = null, n = 0;
+      for (var d = dates[0]; d <= end && n < 3650; d = addDaysISO(d, 1), n++) {
+        var load = by[slug][d] || 0;
+        acute = acute === null ? load : load * ACUTE_ALPHA + (1 - ACUTE_ALPHA) * acute;
+        chronic = chronic === null ? load : load * CHRONIC_ALPHA + (1 - CHRONIC_ALPHA) * chronic;
+      }
+      var acwr = chronic > 0 ? acute / chronic : null;
+      out[slug] = { acwr: acwr, status: acwrStatus(acwr), last: dates[dates.length - 1] };
+    });
+    return out;
+  }
+
+  /* --- strength log: what players actually lifted ---
+     Older rows are one per set, newer rows one per exercise with the
+     weights as a comma list. Both are folded into one entry per player,
+     date and exercise. */
+  var STRENGTH_COLS = ["timestamp", "date", "slug", "name", "mode", "block", "day", "code", "exercise", "sets", "reps", "weights_kg", "rpe", "note"];
+  async function loadStrengthLog() {
+    var rows = await readLog("STRENGTH LOG", STRENGTH_COLS), by = {};
+    rows.forEach(function (r) {
+      if (!r.exercise) return;
+      var key = r.slug + "|" + r.date + "|" + r.exercise.toLowerCase();
+      var e = by[key] = by[key] || { slug: r.slug, date: r.date, exercise: r.exercise, reps: 0, weights: [], rows: 0, setsMax: 0, rpe: null };
+      var w = r.weights_kg.split(",").map(function (x) { return parseFloat(x); }).filter(function (x) { return !isNaN(x); });
+      if (w.length > 1) e.weights = w; else e.weights = e.weights.concat(w);
+      e.reps = parseFloat(r.reps) || e.reps;
+      e.rows++; e.setsMax = Math.max(e.setsMax, parseFloat(r.sets) || 0);
+      var rpe = parseFloat(r.rpe); if (!isNaN(rpe)) e.rpe = rpe;
+    });
+    return Object.keys(by).map(function (k) {
+      var e = by[k];
+      e.sets = Math.max(e.setsMax, e.weights.length);
+      e.top = e.weights.length ? Math.max.apply(null, e.weights) : null;
+      e.volume = e.weights.reduce(function (a, w) { return a + w * e.reps; }, 0);
+      return e;
+    });
+  }
+
+  function avatar(p, cls) {
+    var box = el("div", { class: cls || "av" }, [initials(p.name)]);
+    if (p.slug) {
+      var img = el("img", { src: PHOTO_BASE + p.slug + ".png", alt: "" });
+      img.addEventListener("error", function () { img.remove(); });
+      box.appendChild(img);
+    }
+    return box;
+  }
+
   function isYT(v) { return /^(https?:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(v || ""); }
   function ytId(v) {
     var m = String(v || "").match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/)([A-Za-z0-9_-]{6,})/);
@@ -206,6 +379,10 @@
     parseCSV: parseCSV, readTab: readTab, post: post, saveIsLive: saveIsLive, loadRoster: loadRoster,
     isYT: isYT, ytId: ytId, ytThumb: ytThumb, prescription: prescription, loadText: loadText,
     isTrue: isTrue, estMinutes: estMinutes, el: el, parseDate: parseDate, isoDate: isoDate,
-    prettyDate: prettyDate, logout: logout
+    prettyDate: prettyDate, logout: logout,
+    todayISO: todayISO, addDaysISO: addDaysISO, mean: mean, nameKey: nameKey, initials: initials,
+    loadPhysio: loadPhysio, loadWellnessToday: loadWellnessToday, loadACWR: loadACWR,
+    loadStrengthLog: loadStrengthLog, acwrStatus: acwrStatus, avatar: avatar,
+    PHYSIO_SHEET_EDIT: PHYSIO_SHEET_EDIT
   };
 })();
