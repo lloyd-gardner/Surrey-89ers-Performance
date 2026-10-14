@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="89ers Perf">
+  <meta name="theme-color" content="#008348">
+  <link rel="apple-touch-icon" href="/icon-192.jpg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinic Notes — Surrey 89ers Performance Hub</title>
+<link rel="stylesheet" href="/sc.css">
+<style>
+/* ============ screen ============ */
+.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+.privacy{margin-bottom:16px}
+.privacy b{color:var(--offwhite)}
+
+.soap{margin-bottom:16px;overflow:hidden}
+.soap-head{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border-soft);background:rgba(0,0,0,0.15)}
+.soap-letter{width:30px;height:30px;border-radius:8px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;flex:none}
+.soap-title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700}
+.soap-sub{font-size:12px;color:var(--offwhite-mid)}
+.soap-body{padding:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px}
+.full{grid-column:1/-1}
+.field .lbl b{color:var(--offwhite);font-weight:600}
+.field .sub{font-size:11.5px;font-style:italic;color:var(--muted);margin-top:-2px}
+.textarea{min-height:64px}
+
+/* body chart */
+.chart-tools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.chip .sym{font-family:'Space Grotesk',sans-serif;font-weight:700;margin-right:6px}
+.chip.t-pain .sym{color:#ff7a7a}.chip.t-stiff .sym{color:var(--blue)}.chip.t-pins .sym{color:var(--amber)}
+.chart-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--field-border)}
+.chart-paper{background:#FAF9F6;min-width:620px}
+.chart-paper svg{display:block;width:100%;height:auto;touch-action:manipulation;cursor:crosshair;user-select:none;-webkit-user-select:none}
+.chart-views{display:grid;grid-template-columns:244fr 245fr 137fr 126fr;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4b5a51;padding:6px 0 8px;text-align:center}
+.mark-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.mark-row{display:flex;align-items:center;gap:10px;padding:6px 8px 6px 10px;border-radius:8px;border:1px solid var(--border-soft);background:rgba(0,0,0,0.15)}
+.mark-row.sel{border-color:var(--green)}
+.mark-num{font-family:'Space Grotesk',sans-serif;font-weight:700;width:52px;flex:none;font-size:13px}
+.mark-view{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--offwhite-mid);width:84px;flex:none}
+.mark-row .input{height:36px;font-size:15px}
+.c-pain{color:#ff7a7a}.c-stiff{color:var(--blue)}.c-pins{color:var(--amber)}
+
+/* 0–10 picker */
+.scale{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:4px}
+.scale button{min-height:40px;border-radius:7px;border:1px solid var(--field-border);background:var(--field);color:var(--offwhite-mid);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;padding:0}
+.scale button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.scale-ends{display:flex;justify-content:space-between;font-size:11px;font-style:italic;color:var(--muted);margin-top:3px}
+.pain-trio{display:grid;grid-template-columns:minmax(0,640px);gap:14px}
+
+/* red flags */
+.flags{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}
+.flag{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:13px}
+.flag.yes span:first-child{color:#f0a0a0;font-weight:600}
+.yn{display:flex;padding:3px;border-radius:9px;background:var(--field);border:1px solid var(--field-border);flex:none}
+.yn button{min-height:34px;min-width:44px;border-radius:6px;border:0;background:transparent;color:var(--offwhite-mid);font-weight:700;cursor:pointer}
+.yn button.y[aria-pressed="true"]{background:rgba(224,85,85,0.25);color:#f0a0a0}
+.yn button.n[aria-pressed="true"]{background:var(--green-dim);color:var(--green-text)}
+.flag-action.alert .textarea{border-color:var(--red)}
+
+/* ROM / strength */
+.rom{width:100%;border-collapse:collapse}
+.rom th{font-size:10px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--offwhite-mid);text-align:left;padding:0 6px 6px}
+.rom td{padding:3px}
+.rom .input{height:38px;font-size:15px}
+.rom td:last-child{width:40px}
+.rom-lbl{display:none}
+
+.narrow-only{display:none}
+.foot-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:6px}
+#msg:empty{display:none}
+
+@media (max-width:760px){
+  .soap-body,.flags,.pain-trio{grid-template-columns:1fr}
+  .flag{gap:10px}
+  .rom thead{display:none}
+  .rom,.rom tbody,.rom tr,.rom td{display:block;width:auto}
+  .rom tr{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 0;border-bottom:1px solid var(--border-soft)}
+  .rom td{padding:0}
+  .rom td:first-child{grid-column:1/-1}
+  .rom td:last-child{grid-column:1/-1;width:auto}
+  .rom-lbl{display:block;font-size:11px;color:var(--offwhite-mid);margin-bottom:2px}
+  .mark-view{width:auto}
+  .mark-row{flex-wrap:wrap}
+  .mark-row .btn{margin-left:auto}
+  .mark-row .input{order:3;flex:1 1 100%}
+  .narrow-only{display:block}
+}
+
+/* ============ print: the PDF ============ */
+#print-view{display:none}
+@media print{
+  @page{size:A4;margin:12mm 12mm 16mm}
+  body{background:#fff !important;color:#111;font-size:9.5pt;min-height:0}
+  body > *:not(#print-view){display:none !important}
+  #print-view{display:block;font-family:Inter,Arial,sans-serif;color:#111}
+  .pv-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px}
+  .pv-top h1{font-family:'Space Grotesk',Arial,sans-serif;font-size:18pt;color:#005c33;font-weight:700}
+  .pv-top .club{font-weight:700;color:#005c33;font-size:10pt}
+  .pv-t{width:100%;border-collapse:collapse;margin-bottom:10px;page-break-inside:auto}
+  .pv-t td,.pv-t th{border:1px solid #9fb8a8;padding:4px 7px;vertical-align:top;text-align:left}
+  .pv-t tr{page-break-inside:avoid;break-inside:avoid}
+  .pv-bar td{background:#005c33 !important;color:#fff !important;font-weight:700;letter-spacing:.3px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pv-l{width:30%;background:#eaf3ed !important;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pv-l i{display:block;font-weight:400;font-size:7.5pt;color:#555}
+  .pv-v{white-space:pre-wrap;min-height:1.2em}
+  .pv-k{font-weight:700}
+  .pv-chart{text-align:center}
+  .pv-chart svg{width:60%;height:auto;display:block;margin:4px auto}
+  .pv-legend{font-size:8pt;font-style:italic;color:#333}
+  .pv-marks{text-align:left;font-size:8.5pt;margin:4px 0 2px;columns:2}
+  .pv-scale td{text-align:center;width:8%}
+  .pv-scale td.pv-l{text-align:left;width:12%}
+  .pv-scale .on{background:#d9efe2 !important;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pv-scale small{display:block;font-size:6.5pt;font-weight:700;color:#005c33}
+  .pv-yes{color:#b00020;font-weight:700}
+  .pv-break{page-break-before:always;break-before:page}
+  .pv-foot{text-align:center;font-size:7.5pt;color:#777;margin-top:6px}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <img class="topbar-logo" src="/icon-192.jpg" alt="89ers">
+    <div><div class="topbar-title">Surrey 89ers</div><div class="topbar-sub">Performance Hub · 2026-27</div></div>
+  </div>
+  <div class="topbar-actions"><button class="btn btn-sm" onclick="SC.logout()">Sign out</button></div>
+</div>
+<div class="layout">
+  <div class="sidenav"></div>
+  <div class="main">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Clinic Notes</div>
+        <div class="page-sub">Subjective · Objective · Assessment · Plan</div>
+      </div>
+      <div class="head-actions">
+        <button class="btn btn-danger" data-clear>Clear form</button>
+        <button class="btn btn-primary" data-save>Save PDF</button>
+      </div>
+    </div>
+
+    <div class="banner warn privacy">
+      <span><b>Nothing on this page is saved or sent.</b> When the page is closed or refreshed, the note is gone. Save it as a PDF and upload it to the clinic notes folder on SharePoint.</span>
+    </div>
+    <div class="banner" id="msg" role="status"></div>
+
+    <form id="form" autocomplete="off" onsubmit="return false"></form>
+
+    <div class="foot-actions">
+      <button class="btn btn-danger" data-clear>Clear form</button>
+      <button class="btn btn-primary" data-save>Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<div id="print-view" aria-hidden="true"></div>
+
+<script src="/sc.js"></script>
+<script src="/hub.js"></script>
+<script>
+/* Clinic notes for the physio, laid out after the clinic notes form
+   (SOAP sections, body chart, red flag screen).
+
+   PRIVACY: this page keeps the note in memory only. It writes nothing to
+   Google Sheets, the endpoint or browser storage, and sends nothing
+   anywhere. The only thing it reads is ROSTER (names and positions), which
+   the dashboard already reads. The finished note leaves the page only as
+   the PDF the physio saves and uploads to SharePoint. The one thing kept
+   on the device is the therapist's own name, so it is filled in next time. */
+
+const el=SC.el, $=id=>document.getElementById(id);
+const SVGNS="http://www.w3.org/2000/svg";
+const IMG={src:"/body-chart.png", w:752, h:514};
+/* Where each of the four figures sits across the picture (image pixels). */
+const VIEWS=[[244,"Front"],[489,"Back"],[626,"Right side"],[Infinity,"Left side"]];
+const viewAt=x=>VIEWS.find(v=>x<v[0])[1];
+const MARK={ pain:{label:"Pain",sym:"×",color:"#c62828"}, stiff:{label:"Stiffness",sym:"O",color:"#1565c0"}, pins:{label:"Pins & needles",sym:"//",color:"#b26a00"} };
+
+const RED_FLAGS=[
+  ["weight","Unexplained weight loss"],
+  ["night","Constant / night pain not eased by rest or position"],
+  ["fever","Fever, night sweats, feeling unwell"],
+  ["cancer","History of cancer"],
+  ["saddle","Saddle numbness, bladder or bowel change"],
+  ["neuro","Progressive numbness, weakness or pins & needles"],
+  ["head","Head injury / concussion symptoms"],
+  ["cardiac","Chest pain, palpitations or fainting on exercise"],
+  ["dvt","Calf swelling, heat or tenderness (DVT)"],
+  ["fracture","Unable to weight bear / suspected fracture"]
+];
+const ROM_ROWS=4;
+
+let ROSTER=[], S, dirty=false, tool="pain", selMark=-1, clearArmed=null;
+
+function blank(){
+  const s={ player:"", playerOther:"", date:SC.todayISO(), dob:"", position:"", squad:"", therapist:"", session:"",
+    main:"", hpc:"", load:"", pmh:"", marks:[], painNow:null, painBest:null, painWorst:null,
+    severity:"", irritability:"", aggravating:"", easing:"", h24:"", sleep:"", functional:"",
+    flags:{}, flagAction:"", observation:"", palpation:"", rom:[], special:"",
+    diagnosis:"", problems:"", treatment:"", home:"", availability:"", updated:[], review:"", signed:"", signDate:SC.todayISO() };
+  for(let i=0;i<ROM_ROWS;i++) s.rom.push({move:"",al:"",ar:"",sl:"",sr:""});
+  try{ s.therapist=localStorage.getItem("89ers_therapist")||""; }catch(e){}
+  return s;
+}
+function touch(){ dirty=true; }
+function playerName(){ if(S.player==="__other") return S.playerOther.trim(); const p=ROSTER.find(r=>r.slug===S.player); return p?p.name:""; }
+
+/* ---------- small builders ---------- */
+let uidN=0; const uid=()=>"f"+(++uidN);
+function label(text, sub, forId){
+  return [ el(forId?"label":"span",{class:"lbl","for":forId||null},[el("b",{text:text})]), sub?el("div",{class:"sub",text:sub}):null ];
+}
+function area(key, text, sub, opts){
+  opts=opts||{}; const id=uid();
+  const t=el("textarea",{class:"textarea",id:id,rows:opts.rows||"3",maxlength:"4000",placeholder:opts.ph||"",
+    oninput:e=>{ S[key]=e.target.value; grow(e.target); touch(); }});
+  t.value=S[key];
+  return el("div",{class:"field"+(opts.full?" full":"")},label(text,sub,id).concat([t]));
+}
+function grow(t){ t.style.height="auto"; t.style.height=Math.max(64,t.scrollHeight+2)+"px"; }
+function chips(key, text, options, multi, cls){
+  const box=el("div",{class:"chip-row",role:"group","aria-label":text});
+  const paint=()=>box.querySelectorAll("button").forEach(b=>{
+    const on=multi ? S[key].indexOf(b.dataset.v)>=0 : S[key]===b.dataset.v;
+    b.setAttribute("aria-pressed", on?"true":"false"); });
+  options.forEach(o=>box.appendChild(el("button",{type:"button",class:"chip","data-v":o,text:o,onclick:()=>{
+    if(multi){ const i=S[key].indexOf(o); if(i>=0) S[key].splice(i,1); else S[key].push(o); }
+    else S[key] = S[key]===o ? "" : o;            /* tap again to clear */
+    paint(); touch(); }})));
+  paint();
+  return el("div",{class:"field "+(cls||"")},label(text).concat([box]));
+}
+function input(key, text, type, opts){
+  opts=opts||{}; const id=uid();
+  const i=el("input",{class:"input",id:id,type:type||"text",maxlength:"200",placeholder:opts.ph||"",
+    oninput:e=>{ S[key]=e.target.value; touch(); if(opts.on) opts.on(e.target.value); }});
+  i.value=S[key];
+  return el("div",{class:"field"},label(text,null,id).concat([i]));
+}
+function scale(key, text){
+  const box=el("div",{class:"scale",role:"group","aria-label":text+" (0 to 10)"});
+  const paint=()=>box.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", S[key]===+b.dataset.v?"true":"false"));
+  for(let n=0;n<=10;n++) box.appendChild(el("button",{type:"button","data-v":String(n),text:String(n),onclick:()=>{
+    S[key] = S[key]===n ? null : n; paint(); touch(); }}));
+  paint();
+  return el("div",{class:"field"},label(text).concat([box, el("div",{class:"scale-ends"},[el("span",{text:"No pain"}),el("span",{text:"Worst pain"})])]));
+}
+function section(letter, title, sub, kids){
+  return el("section",{class:"card soap"},[
+    el("div",{class:"soap-head"},[ el("div",{class:"soap-letter",text:letter}),
+      el("div",{},[ el("div",{class:"soap-title",text:title}), sub?el("div",{class:"soap-sub",text:sub}):null ]) ]),
+    el("div",{class:"soap-body"},kids)
+  ]);
+}
+
+/* ---------- the form ---------- */
+function render(){
+  const f=$("form"); f.textContent=""; uidN=0;
+
+  /* player details */
+  const pid=uid();
+  const sel=el("select",{class:"select",id:pid,"data-players":"",onchange:e=>{
+    S.player=e.target.value;
+    const p=ROSTER.find(r=>r.slug===S.player);
+    if(p){ S.position=p.pos; posInput.value=p.pos; }
+    other.hidden = S.player!=="__other";
+    touch(); }});
+  fillPlayers(sel);
+  const other=el("input",{class:"input",type:"text",maxlength:"120",placeholder:"Full name","aria-label":"Player name",
+    oninput:e=>{ S.playerOther=e.target.value; touch(); }});
+  other.value=S.playerOther; other.hidden=S.player!=="__other";
+  const posField=input("position","Position");
+  const posInput=posField.querySelector("input");
+
+  f.appendChild(section("i","Clinic note","Player and session details",[
+    el("div",{class:"field"},label("Player name",null,pid).concat([sel, other])),
+    input("date","Date","date"),
+    input("dob","D.O.B.","date"),
+    posField,
+    input("squad","Squad / level","text",{ph:"e.g. First team · SLB"}),
+    input("therapist","Sports therapist","text",{on:v=>{ try{ localStorage.setItem("89ers_therapist", v.trim()); }catch(e){} }}),
+    chips("session","Session",["Initial","Follow-up","Courtside / match"],false,"full")
+  ]));
+
+  /* S */
+  f.appendChild(section("S","Subjective",null,[
+    area("main","Main problem","e.g. right lateral ankle",{rows:"2",full:true}),
+    area("hpc","History of presenting condition","When? Acute / gradual? MOI – landing, cutting, contact?"),
+    area("load","Training & game load","Sessions/week, minutes played, recent changes, next fixture"),
+    area("pmh","Previous injury / PMH / meds",null,{full:true}),
+    bodyChart(),
+    el("div",{class:"pain-trio full"},[ scale("painNow","Pain now"), scale("painBest","At best"), scale("painWorst","At worst") ]),
+    chips("severity","Severity",["High","Mod","Low"]),
+    chips("irritability","Irritability",["High","Mod","Low"]),
+    area("aggravating","Aggravating factors",null,{rows:"2"}),
+    area("easing","Easing factors",null,{rows:"2"}),
+    area("h24","24-hour behaviour",null,{rows:"2"}),
+    area("sleep","Sleep",null,{rows:"2"}),
+    area("functional","Functional / court limitations","Jumping, landing, cutting, sprinting, shooting",{full:true})
+  ]));
+
+  /* red flags */
+  f.appendChild(redFlags());
+
+  /* O */
+  f.appendChild(section("O","Objective",null,[
+    area("observation","Observation / swelling",null,{rows:"2"}),
+    area("palpation","Palpation",null,{rows:"2"}),
+    romTable(),
+    area("special","Special / functional tests","e.g. SL squat, SL hop, drop landing, ligament tests",{full:true})
+  ]));
+
+  /* A */
+  f.appendChild(section("A","Assessment",null,[
+    area("diagnosis","Working diagnosis",null,{full:true}),
+    area("problems","Problems & goals",null,{full:true})
+  ]));
+
+  /* P */
+  f.appendChild(section("P","Plan",null,[
+    area("treatment","Treatment today","Soft tissue, mobs, taping, exercise",{full:true}),
+    area("home","Home / rehab programme",null,{full:true}),
+    chips("availability","Availability",["Full","Modified","Unavailable"]),
+    chips("updated","Updated",["Coach","S&C","Medical team"],true),
+    area("review","Next review / referral",null,{rows:"2",full:true}),
+    input("signed","Signed","text",{ph:"Type your name"}),
+    input("signDate","Date","date")
+  ]));
+
+  f.querySelectorAll("textarea").forEach(grow);
+  paintFlags();
+}
+
+/* ---------- body chart ---------- */
+function svgEl(tag, attrs){ const e=document.createElementNS(SVGNS,tag); Object.keys(attrs||{}).forEach(k=>e.setAttribute(k,attrs[k])); return e; }
+
+/* One mark: pain ×, stiffness O, pins & needles //, numbered. */
+function drawMark(g, m, n, selected){
+  const c=MARK[m.type].color, s={stroke:c,"stroke-width":"3","stroke-linecap":"round",fill:"none"};
+  const grp=svgEl("g",{"data-i":String(n-1),style:"cursor:pointer"});
+  if(selected) grp.appendChild(svgEl("circle",{cx:m.x,cy:m.y,r:"17",fill:"rgba(0,131,72,0.18)",stroke:"#008348","stroke-width":"2"}));
+  grp.appendChild(svgEl("circle",{cx:m.x,cy:m.y,r:"16",fill:"transparent"}));          /* bigger tap target */
+  if(m.type==="pain"){
+    grp.appendChild(svgEl("line",Object.assign({x1:m.x-8,y1:m.y-8,x2:m.x+8,y2:m.y+8},s)));
+    grp.appendChild(svgEl("line",Object.assign({x1:m.x-8,y1:m.y+8,x2:m.x+8,y2:m.y-8},s)));
+  }else if(m.type==="stiff"){
+    grp.appendChild(svgEl("circle",Object.assign({cx:m.x,cy:m.y,r:"8"},s)));
+  }else{
+    grp.appendChild(svgEl("line",Object.assign({x1:m.x-9,y1:m.y+8,x2:m.x-2,y2:m.y-8},s)));
+    grp.appendChild(svgEl("line",Object.assign({x1:m.x+2,y1:m.y+8,x2:m.x+9,y2:m.y-8},s)));
+  }
+  const t=svgEl("text",{x:m.x+11,y:m.y-9,fill:c,"font-size":"14","font-weight":"700","font-family":"Inter, Arial, sans-serif",
+    stroke:"#FAF9F6","stroke-width":"3","paint-order":"stroke"});
+  t.textContent=String(n);
+  grp.appendChild(t);
+  g.appendChild(grp);
+}
+function chartSVG(withSelection){
+  const svg=svgEl("svg",{viewBox:"0 0 "+IMG.w+" "+IMG.h,role:"img","aria-label":"Body chart with "+S.marks.length+" marked areas"});
+  const im=svgEl("image",{href:IMG.src,x:"0",y:"0",width:String(IMG.w),height:String(IMG.h),style:"mix-blend-mode:multiply"});
+  svg.appendChild(im);
+  const g=svgEl("g"); svg.appendChild(g);
+  S.marks.forEach((m,i)=>drawMark(g,m,i+1,withSelection && i===selMark));
+  return svg;
+}
+function bodyChart(){
+  const wrap=el("div",{class:"field full",id:"chart-field"});
+  paintChart(wrap);
+  return wrap;
+}
+function paintChart(wrap){
+  wrap=wrap||$("chart-field"); if(!wrap) return;
+  wrap.textContent="";
+  const tools=el("div",{class:"chip-row",role:"group","aria-label":"Mark type"},
+    Object.keys(MARK).map(k=>el("button",{type:"button",class:"chip t-"+k,"aria-pressed":tool===k?"true":"false",
+      onclick:()=>{ tool=k; paintChart(); }},[ el("span",{class:"sym",text:MARK[k].sym}), MARK[k].label ])));
+  const svg=chartSVG(true);
+  let down=null;
+  svg.addEventListener("pointerdown",e=>{ down={x:e.clientX,y:e.clientY}; });
+  svg.addEventListener("pointerup",e=>{
+    if(!down || Math.hypot(e.clientX-down.x,e.clientY-down.y)>8){ down=null; return; }   /* a scroll, not a tap */
+    down=null;
+    const hit=e.target.closest && e.target.closest("g[data-i]");
+    if(hit){ selMark=+hit.dataset.i; paintChart(); focusMark(); return; }
+    const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+    const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+    if(p.x<0||p.y<0||p.x>IMG.w||p.y>IMG.h) return;
+    S.marks.push({type:tool, x:Math.round(p.x), y:Math.round(p.y), view:viewAt(p.x), note:""});
+    selMark=S.marks.length-1; touch(); paintChart();
+  });
+
+  const list=el("div",{class:"mark-list"});
+  S.marks.forEach((m,i)=>{
+    const note=el("input",{class:"input",type:"text",maxlength:"120",placeholder:"Where exactly? e.g. R lateral ankle, ATFL",
+      "aria-label":"Mark "+(i+1)+" description","data-mark":String(i),
+      onfocus:()=>{ if(selMark!==i){ selMark=i; svgRepaint(); markRows(); } },
+      oninput:e=>{ m.note=e.target.value; touch(); }});
+    note.value=m.note;
+    list.appendChild(el("div",{class:"mark-row"+(i===selMark?" sel":"")},[
+      el("span",{class:"mark-num c-"+m.type,text:(i+1)+"  "+MARK[m.type].sym}),
+      el("span",{class:"mark-view",text:m.view}),
+      note,
+      el("button",{type:"button",class:"btn btn-sm btn-icon btn-ghost","aria-label":"Remove mark "+(i+1),text:"✕",onclick:()=>{
+        S.marks.splice(i,1); selMark=-1; touch(); paintChart(); }})
+    ]));
+  });
+
+  wrap.appendChild(el("div",{class:"chart-tools"},[
+    el("div",{},[ el("span",{class:"lbl"},[el("b",{text:"Body chart"})]),
+      el("div",{class:"sub",text:"Pick a mark type, then tap the picture where it is. Tap a mark to select it."}),
+      el("div",{class:"sub narrow-only",text:"Swipe the picture sideways for the side views."}) ]),
+    tools ]));
+  wrap.appendChild(el("div",{class:"chart-scroll"},[ el("div",{class:"chart-paper"},[
+    el("div",{class:"chart-views"},VIEWS.map(v=>el("span",{text:v[1]}))), svg ]) ]));
+  wrap.appendChild(list);
+  if(!S.marks.length) wrap.appendChild(el("div",{class:"hint",style:"margin-top:8px",text:"No areas marked yet."}));
+
+  function svgRepaint(){ const n=chartSVG(true); svg.replaceChildren(...n.childNodes); }
+  function markRows(){ list.querySelectorAll(".mark-row").forEach((r,i)=>r.classList.toggle("sel",i===selMark)); }
+}
+function focusMark(){ const i=document.querySelector('[data-mark="'+selMark+'"]'); if(i) i.focus({preventScroll:true}); }
+
+/* ---------- red flags ---------- */
+function redFlags(){
+  const box=el("div",{class:"flags full"});
+  RED_FLAGS.forEach(([k,text])=>{
+    const yn=el("div",{class:"yn",role:"group","aria-label":text},[
+      el("button",{type:"button",class:"y",text:"Y",onclick:()=>setFlag(k,"Y")}),
+      el("button",{type:"button",class:"n",text:"N",onclick:()=>setFlag(k,"N")}) ]);
+    box.appendChild(el("div",{class:"flag","data-flag":k},[ el("span",{text:text}), yn ]));
+  });
+  const act=area("flagAction","Action taken / referred to","Only if any Y above",{rows:"2",full:true});
+  act.classList.add("flag-action");
+  const card=section("!","Red flag screening","Tick Y or N for each. Any Y: stop, refer or escalate.",[
+    el("div",{class:"banner err full",id:"flag-alert",hidden:true,style:"margin:0"},[
+      el("span",{text:"Red flag ticked. Stop, refer or escalate, and record the action taken below."}) ]),
+    box, act ]);
+  card.querySelector(".soap-letter").style.background="var(--red)";
+  return card;
+}
+function setFlag(k,v){ S.flags[k] = S.flags[k]===v ? "" : v; touch(); paintFlags(); }
+function paintFlags(){
+  document.querySelectorAll("[data-flag]").forEach(r=>{
+    const v=S.flags[r.dataset.flag]||"";
+    r.classList.toggle("yes", v==="Y");
+    r.querySelector(".y").setAttribute("aria-pressed", v==="Y"?"true":"false");
+    r.querySelector(".n").setAttribute("aria-pressed", v==="N"?"true":"false");
+  });
+  const any=RED_FLAGS.some(([k])=>S.flags[k]==="Y");
+  const a=$("flag-alert"); if(a) a.hidden=!any;
+  const act=document.querySelector(".flag-action"); if(act) act.classList.toggle("alert", any);
+}
+
+/* ---------- ROM / strength ---------- */
+function romTable(){
+  const cols=[["al","AROM Left"],["ar","AROM Right"],["sl","Strength Left"],["sr","Strength Right"]];
+  const body=el("tbody");
+  const row=(r,i)=>el("tr",{},[
+    el("td",{},[ el("span",{class:"rom-lbl",text:"Movement / muscle group"}),
+      inp(r,"move","e.g. Ankle DF (knee to wall)","Row "+(i+1)+" movement") ]),
+    ...cols.map(([k,h])=>el("td",{},[ el("span",{class:"rom-lbl",text:h}), inp(r,k,"",h+", row "+(i+1)) ])),
+    el("td",{},[ el("button",{type:"button",class:"btn btn-sm btn-icon btn-ghost","aria-label":"Remove row "+(i+1),text:"✕",onclick:()=>{
+      S.rom.splice(i,1); if(!S.rom.length) S.rom.push({move:"",al:"",ar:"",sl:"",sr:""}); touch(); repaint(); }}) ])
+  ]);
+  function inp(r,k,ph,aria){ const i=el("input",{class:"input",type:"text",maxlength:"80",placeholder:ph,"aria-label":aria,oninput:e=>{ r[k]=e.target.value; touch(); }}); i.value=r[k]; return i; }
+  function repaint(){ body.textContent=""; S.rom.forEach((r,i)=>body.appendChild(row(r,i))); }
+  repaint();
+  return el("div",{class:"field full"},[
+    el("span",{class:"lbl"},[el("b",{text:"ROM / strength"})]),
+    el("table",{class:"rom"},[ el("thead",{},[ el("tr",{},[ el("th",{text:"Movement / muscle group"}), ...cols.map(c=>el("th",{text:c[1]})), el("th") ]) ]), body ]),
+    el("div",{},[ el("button",{type:"button",class:"btn btn-sm",text:"+ Add row",onclick:()=>{ S.rom.push({move:"",al:"",ar:"",sl:"",sr:""}); repaint(); }}) ])
+  ]);
+}
+
+/* ---------- PDF: built from the note, printed by the browser ---------- */
+const BOX_ON="☒", BOX_OFF="☐";
+function boxes(opts, chosen){ return opts.map(o=>((Array.isArray(chosen)?chosen.indexOf(o)>=0:chosen===o)?BOX_ON:BOX_OFF)+" "+o).join("    "); }
+function fmtDate(iso){ return iso ? (SC.prettyDate(iso,true)||iso) : ""; }
+
+function buildPrint(){
+  const pv=$("print-view"); pv.textContent="";
+  const T=rows=>el("table",{class:"pv-t"},[el("tbody",{},rows)]);
+  const bar=t=>el("tr",{class:"pv-bar"},[el("td",{colspan:"4",text:t})]);
+  const lv=(l,i,v)=>el("tr",{},[ el("td",{class:"pv-l"},[l, i?el("i",{text:i}):null]), el("td",{class:"pv-v",colspan:"3",text:v||""}) ]);
+  const pair=(l1,v1,l2,v2)=>el("tr",{},[
+    el("td",{colspan:"2",class:"pv-v"},[el("span",{class:"pv-k",text:l1+": "}), v1||""]),
+    el("td",{colspan:"2",class:"pv-v"},[el("span",{class:"pv-k",text:l2+": "}), v2||""]) ]);
+  const full=(l,v)=>el("tr",{},[ el("td",{colspan:"4",class:"pv-v"},[el("span",{class:"pv-k",text:l+": "}), v||""]) ]);
+
+  pv.appendChild(el("div",{class:"pv-top"},[ el("h1",{text:"Clinic Notes"}), el("div",{class:"club",text:"Surrey 89ers"}) ]));
+  pv.appendChild(T([
+    pair("Player name",playerName(),"Date",fmtDate(S.date)),
+    pair("D.O.B.",fmtDate(S.dob),"Position",S.position),
+    pair("Squad / level",S.squad,"Sports therapist",S.therapist),
+    full("Session",boxes(["Initial","Follow-up","Courtside / match"],S.session))
+  ]));
+
+  /* body chart cell */
+  const chart=el("td",{colspan:"4",class:"pv-chart"},[
+    el("div",{class:"pv-k",text:"Body chart"}),
+    el("div",{class:"pv-legend",text:"Pain (×)    Stiffness (O)    Pins & needles (//)"}),
+    chartSVG(false)
+  ]);
+  if(S.marks.length) chart.appendChild(el("div",{class:"pv-marks"},S.marks.map((m,i)=>
+    el("div",{},[ el("b",{text:(i+1)+". "+MARK[m.type].label}), " · "+m.view+(m.note?" · "+m.note:"") ]))));
+
+  /* pain scale: the 0–10 row, with Now / Best / Worst under their numbers */
+  const tags={}; [["painNow","Now"],["painBest","Best"],["painWorst","Worst"]].forEach(([k,t])=>{ if(S[k]!=null) (tags[S[k]]=tags[S[k]]||[]).push(t); });
+  const scaleT=el("table",{class:"pv-t pv-scale"},[el("tbody",{},[
+    el("tr",{},[ el("td",{class:"pv-l",text:"Pain scale (0–10)"}),
+      ...Array.from({length:11},(_,n)=>el("td",{class:tags[n]?"on":"",},[String(n), tags[n]?el("small",{text:tags[n].join(" · ")}):null])) ]),
+    el("tr",{},[ el("td",{colspan:"12",class:"pv-v"},[
+      el("span",{class:"pv-k",text:"Pain now: "}), S.painNow==null?"–":S.painNow+"/10", "      ",
+      el("span",{class:"pv-k",text:"At best: "}), S.painBest==null?"–":S.painBest+"/10", "      ",
+      el("span",{class:"pv-k",text:"At worst: "}), S.painWorst==null?"–":S.painWorst+"/10" ]) ])
+  ])]);
+
+  pv.appendChild(T([
+    bar("S – SUBJECTIVE"),
+    lv("Main problem","e.g. right lateral ankle",S.main),
+    lv("History of presenting condition","When? Acute / gradual? MOI – landing, cutting, contact?",S.hpc),
+    lv("Training & game load","Sessions/week, minutes played, recent changes, next fixture",S.load),
+    lv("Previous injury / PMH / meds","",S.pmh),
+    el("tr",{},[chart])
+  ]));
+  pv.appendChild(scaleT);
+  pv.appendChild(T([
+    pair("Severity",boxes(["High","Mod","Low"],S.severity),"Irritability",boxes(["High","Mod","Low"],S.irritability)),
+    pair("Aggravating factors",S.aggravating,"Easing factors",S.easing),
+    pair("24-hour behaviour",S.h24,"Sleep",S.sleep),
+    lv("Functional / court limitations","Jumping, landing, cutting, sprinting, shooting",S.functional)
+  ]));
+
+  pv.appendChild(el("div",{class:"pv-foot",text:"Confidential clinical record · Surrey 89ers · Page 1"}));
+
+  /* page 2 */
+  const fl=RED_FLAGS.map(([k,t])=>{ const v=S.flags[k]||"";
+    return [ el("td",{class:"pv-v",text:t}), el("td",{class:"pv-v"+(v==="Y"?" pv-yes":""),style:"width:13%;white-space:nowrap",text:(v==="Y"?BOX_ON:BOX_OFF)+"Y  "+(v==="N"?BOX_ON:BOX_OFF)+"N"}) ]; });
+  const flagRows=[]; for(let i=0;i<fl.length;i+=2) flagRows.push(el("tr",{},fl[i].concat(fl[i+1]||[])));
+  const brk=T([ bar("RED FLAG SCREENING — Tick Y or N for each. Any Y: stop, refer or escalate"), ...flagRows,
+    lv("Action taken / referred to","Only if any Y above",S.flagAction) ]);
+  brk.classList.add("pv-break");
+  pv.appendChild(brk);
+
+  const romRows=S.rom.filter(r=>r.move||r.al||r.ar||r.sl||r.sr);
+  if(!romRows.length) romRows.push({move:"",al:"",ar:"",sl:"",sr:""});
+  pv.appendChild(T([
+    bar("O – OBJECTIVE"),
+    pair("Observation / swelling",S.observation,"Palpation",S.palpation)
+  ]));
+  pv.appendChild(el("table",{class:"pv-t"},[ el("tbody",{},[
+    el("tr",{},["ROM / strength","AROM Left","AROM Right","Strength Left","Strength Right"].map((h,i)=>el("td",{class:i?"pv-k":"pv-l",text:h}))),
+    ...romRows.map(r=>el("tr",{},[r.move,r.al,r.ar,r.sl,r.sr].map(v=>el("td",{class:"pv-v",text:v||" "}))))
+  ])]));
+  pv.appendChild(T([
+    lv("Special / functional tests","e.g. SL squat, SL hop, drop landing, ligament tests",S.special),
+    bar("A – ASSESSMENT"),
+    lv("Working diagnosis","",S.diagnosis),
+    lv("Problems & goals","",S.problems),
+    bar("P – PLAN"),
+    lv("Treatment today","Soft tissue, mobs, taping, exercise",S.treatment),
+    lv("Home / rehab programme","",S.home),
+    full("Availability",boxes(["Full","Modified","Unavailable"],S.availability)),
+    full("Updated",boxes(["Coach","S&C","Medical team"],S.updated)),
+    lv("Next review / referral","",S.review),
+    pair("Signed",S.signed,"Date",fmtDate(S.signDate))
+  ]));
+  pv.appendChild(el("div",{class:"pv-foot",text:"Confidential clinical record · Surrey 89ers · Page 2"}));
+}
+
+/* ---------- save / clear ---------- */
+function say(cls, text){ const m=$("msg"); m.className="banner "+cls; m.textContent=text; }
+let savedTitle=document.title;
+function savePDF(){
+  const name=playerName();
+  if(!name || !S.date){
+    say("err", !name ? "Choose the player before saving." : "Add the date before saving.");
+    window.scrollTo({top:0,behavior:"smooth"}); return;
+  }
+  if(RED_FLAGS.some(([k])=>S.flags[k]==="Y") && !S.flagAction.trim())
+    say("warn","A red flag is ticked but no action is recorded. The PDF will show it blank.");
+  buildPrint();
+  /* The PDF's file name comes from the page title in Safari and Chrome. */
+  savedTitle=document.title;
+  document.title="Clinic note - "+name+" - "+S.date;
+  window.print();
+}
+window.addEventListener("beforeprint",()=>{ if(!$("print-view").childNodes.length) buildPrint(); });
+window.addEventListener("afterprint",()=>{
+  document.title=savedTitle;
+  if(playerName()){
+    dirty=false;
+    say("ok","PDF ready. Upload it to the clinic notes folder on SharePoint, then clear the form. On iPad or iPhone: in the print screen, tap the share button, then Save to Files.");
+  }
+  $("print-view").textContent="";
+});
+
+function clearForm(btns){
+  if(!clearArmed){
+    clearArmed=setTimeout(()=>{ clearArmed=null; btns.forEach(b=>b.textContent="Clear form"); },4000);
+    btns.forEach(b=>b.textContent="Tap again to clear");
+    return;
+  }
+  clearTimeout(clearArmed); clearArmed=null;
+  btns.forEach(b=>b.textContent="Clear form");
+  S=blank(); selMark=-1; dirty=false; render();
+  say("", "Form cleared."); window.scrollTo({top:0});
+}
+
+/* Warn before the page is left with an unsaved note. */
+window.addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+
+async function init(){
+  S=blank();
+  render();
+  const save=document.querySelectorAll("[data-save]"), clr=[...document.querySelectorAll("[data-clear]")];
+  save.forEach(b=>b.addEventListener("click",savePDF));
+  clr.forEach(b=>b.addEventListener("click",()=>clearForm(clr)));
+  try{
+    ROSTER=(await SC.loadRoster()).sort((a,b)=>a.name.localeCompare(b.name));
+  }catch(e){
+    console.error(e);
+    say("warn","The squad list could not be read. Choose \"Someone else\" and type the name.");
+  }
+  fillPlayers(document.querySelector("[data-players]"));
+}
+function fillPlayers(sel){
+  if(!sel) return;
+  sel.replaceChildren(...[el("option",{value:"",text:ROSTER.length?"Choose a player":"Loading squad…"})]
+    .concat(ROSTER.map(p=>el("option",{value:p.slug,text:p.name+(p.num!==""?"  #"+p.num:"")})))
+    .concat([el("option",{value:"__other",text:"Someone else (type the name)"})]));
+  sel.value=S.player;
+}
+init();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW failed:', e));
+  });
+}
+</script>
+</body>
+</html>
