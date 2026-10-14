@@ -62,6 +62,16 @@
 .note{font-size:11.5px;font-style:italic;color:var(--offwhite-mid);line-height:1.35}
 .line{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
 
+/* treatment today */
+.treat-card{overflow:hidden;margin-bottom:16px}
+.treat-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.treat-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border-soft);border-right:1px solid var(--border-soft);min-width:0}
+.treat-time{flex:none;width:62px;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--green-text)}
+.treat-time.none{font-family:Inter,sans-serif;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;line-height:1.25;color:var(--amber)}
+.treat-who{min-width:0;flex:1}
+.treat-who .note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+@media (max-width:600px){ .treat-list{grid-template-columns:1fr} .treat-row{border-right:0} }
+
 /* the two sections */
 .sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .section{display:flex;align-items:center;gap:16px;padding:22px 20px;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s;min-height:110px}
@@ -114,6 +124,14 @@
     </div>
 
     <div class="kpi-row" id="kpi-row"></div>
+
+    <section class="card treat-card" aria-labelledby="treat-h">
+      <div class="status-head">
+        <h2 class="card-title" id="treat-h">Treatment today</h2>
+        <span class="hint" id="treat-note">Booked on today's check-in</span>
+      </div>
+      <div id="treat-body"><div class="empty" style="border:0">Loading treatment bookings…</div></div>
+    </section>
 
     <section class="card status-card" aria-labelledby="status-h">
       <div class="status-head">
@@ -188,10 +206,15 @@ async function init(){
   PERF_HUB.buildNav($("sidenav"));
   $("page-date").textContent=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 
-  const [roster, physio, well, load, sessions, rows, log]=await Promise.all([
+  const [roster, physio, well, load, sessions, rows, log, treat]=await Promise.all([
     settle(SC.loadRoster()), settle(SC.loadPhysio()), settle(SC.loadWellnessToday()), settle(SC.loadACWR()),
-    settle(SC.readTab("SESSIONS")), settle(SC.readTab("SESSION EXERCISES")), settle(SC.loadStrengthLog())
+    settle(SC.readTab("SESSIONS")), settle(SC.readTab("SESSION EXERCISES")), settle(SC.loadStrengthLog()),
+    settle(loadTreatmentToday())
   ]);
+  renderTreatment(treat, roster.ok && roster.v.length ? roster.v : null);
+  /* A later check-in can cancel a booking, so the treatment flag on the
+     status table and the KPI follow each player's latest row today too. */
+  if(treat.ok && well.ok) Object.keys(well.v).forEach(s=>{ if(treat.v[s]) well.v[s].treatment=treat.v[s].yes; });
   if(!roster.ok || !roster.v.length){
     $("status-body").textContent="";
     $("status-body").appendChild(el("div",{class:"empty",style:"border:0",text:"The squad list could not be read from ROSTER. Try again in a moment."}));
@@ -228,6 +251,80 @@ async function init(){
       ? "Today: " + todays.map(s=>s.name).join(", ")
       : "No S&C session published for today";
   }
+}
+
+/* ---------- Treatment today ----------
+   Reads WELLNESS LOG on the Player Portals sheet (link-shared, the same
+   tab the status table already reads). Players book on their daily
+   check-in; only their LATEST row today counts, so a later check-in can
+   move the slot or cancel it. treatment_time is "HH:MM" or blank; a
+   blank still means they asked for treatment. */
+const WELL_SHEET_ID="1NqYAMc7L_yzaiTlms6SpjvhhoJqg19n5XYtj7IGcJqg";
+/* Column order: the fallback for headers Google has blanked. */
+const TREAT_COLS=["timestamp","date","slug","name","sleep_quality","soreness","mood","sleep_duration","stress","energy","treatment","note","treatment_time"];
+
+/* -> { slug: { yes, time:"HH:MM"|"", note, name } } for every player who checked in today */
+async function loadTreatmentToday(){
+  const url="https://docs.google.com/spreadsheets/d/"+WELL_SHEET_ID+
+    "/gviz/tq?tqx=out:csv&headers=0&sheet="+encodeURIComponent("WELLNESS LOG")+"&cachebust="+Date.now();
+  const res=await fetch(url);
+  if(!res.ok) throw new Error("Could not read WELLNESS LOG ("+res.status+")");
+  const raw=SC.parseCSV(await res.text()).filter(r=>r.some(c=>c.trim()!==""));
+  if(raw.length<2) return {};
+  const head=raw[0].map(h=>h.toLowerCase().replace(/[^a-z_]/g,""));
+  const at={}; TREAT_COLS.forEach((k,n)=>{ const f=head.indexOf(k); at[k]=f>=0?f:n; });
+  const get=(r,k)=>(r[at[k]]===undefined?"":String(r[at[k]])).trim();
+  const today=SC.todayISO(), out={};
+  raw.slice(1).forEach(r=>{                       /* rows are in time order: later rows overwrite */
+    const slug=get(r,"slug").toLowerCase();
+    if(!slug || slug==="slug" || get(r,"date").slice(0,10)!==today) return;
+    out[slug]={ yes:/^(yes|true|y)$/i.test(get(r,"treatment")), time:hhmm(get(r,"treatment_time")),
+                note:get(r,"note"), name:get(r,"name") };
+  });
+  return out;
+}
+/* "10:45", "9:30" or a time Google has turned into "10:45:00" -> "10:45"; anything else -> "" */
+function hhmm(v){
+  const m=/(\d{1,2}):(\d{2})/.exec(v||""); if(!m) return "";
+  const h=+m[1], mi=+m[2]; if(h>23||mi>59) return "";
+  return String(h).padStart(2,"0")+":"+m[2];
+}
+
+function renderTreatment(treat, roster){
+  const body=$("treat-body"), hint=$("treat-note"); body.textContent="";
+  if(!treat.ok){
+    hint.textContent="";
+    body.appendChild(el("div",{class:"empty",style:"border:0",text:"Wellness log unreachable. Treatment bookings could not be read."}));
+    return;
+  }
+  const bySlug={}; (roster||[]).forEach(p=>bySlug[p.slug]=p);
+  const list=Object.keys(treat.v).filter(s=>treat.v[s].yes && (!roster || bySlug[s]))   /* roster lists active players only */
+    .map(s=>({ p:bySlug[s]||{slug:s, name:treat.v[s].name||s, pos:"", num:""}, b:treat.v[s] }));
+  /* booked times first, earliest first; then players with no time, by name */
+  list.sort((a,b)=>(a.b.time?0:1)-(b.b.time?0:1) || a.b.time.localeCompare(b.b.time) || a.p.name.localeCompare(b.p.name));
+
+  const timed=list.filter(x=>x.b.time).length, untimed=list.length-timed;
+  hint.textContent=list.length
+    ? [timed?timed+" booked":"", untimed?untimed+" with no time":""].filter(Boolean).join(" · ")
+    : "Booked on today's check-in";
+  if(!list.length){
+    body.appendChild(el("div",{class:"empty",style:"border:0",text:"No treatment requested on today's check-ins."}));
+    return;
+  }
+  const grid=el("div",{class:"treat-list"});
+  list.forEach(x=>{
+    const p=x.p;
+    grid.appendChild(el("div",{class:"treat-row"},[
+      x.b.time ? el("div",{class:"treat-time",text:x.b.time}) : el("div",{class:"treat-time none",text:"No time booked"}),
+      SC.avatar(p),
+      el("div",{class:"treat-who"},[
+        el("div",{class:"p-name",text:p.name}),
+        el("div",{class:"p-sub",text:[p.pos, p.num!==""?"#"+p.num:""].filter(Boolean).join(" · ")}),
+        x.b.note ? el("div",{class:"note",title:x.b.note,text:"“"+x.b.note+"”"}) : null
+      ])
+    ]));
+  });
+  body.appendChild(grid);
 }
 
 function kpi(label, value, small, sub, cls){
