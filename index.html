@@ -52,6 +52,25 @@
 .pills{display:flex;gap:5px;flex-wrap:wrap}
 .pill{font-size:10px;font-weight:700;letter-spacing:.3px;padding:3px 8px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
 .pill small{font-size:8.5px;font-weight:600;opacity:.75;margin-right:4px;letter-spacing:.5px;text-transform:uppercase}
+/* availability pills are buttons that look exactly like the plain pills */
+button.pill{font-family:inherit;line-height:inherit;margin:0;cursor:pointer;-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent;transition:filter .12s,opacity .12s}
+button.pill:hover{filter:brightness(1.18)}
+button.pill:focus-visible{outline:2px solid var(--green-text);outline-offset:2px}
+button.pill[aria-expanded="true"]{filter:brightness(1.25)}
+button.pill.saving{opacity:.55;cursor:progress}
+/* the option list for one pill */
+.am-menu{position:fixed;z-index:300;min-width:190px;max-width:calc(100vw - 16px);background:var(--card2);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.55);padding:6px;display:flex;flex-direction:column}
+.am-head{font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--offwhite-mid);padding:6px 10px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.am-opt{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 10px;border:0;border-radius:7px;background:transparent;color:var(--offwhite);font-family:inherit;font-size:13.5px;font-weight:600;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.am-opt:hover,.am-opt:focus-visible{background:rgba(250,249,246,0.06);outline:none}
+.am-opt[aria-checked="true"]{background:rgba(0,131,72,0.16)}
+.am-dot{width:9px;height:9px;border-radius:50%;flex:none}
+.am-dot.good{background:var(--green-text)}.am-dot.watch{background:var(--amber)}.am-dot.bad{background:#f08a8a}
+.am-tick{margin-left:auto;color:var(--green-text);font-size:13px}
+.am-off{font-size:11.5px;color:var(--amber);padding:4px 10px 8px;line-height:1.35;max-width:240px}
+.am-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);z-index:310;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:13px;box-shadow:0 10px 28px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px)}
+.am-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.am-toast.err{border-color:rgba(224,85,85,0.5);color:#f0a0a0}
 .c-good{color:var(--green-text);background:rgba(74,222,128,0.10);border-color:rgba(74,222,128,0.25)}
 .c-watch{color:var(--amber);background:rgba(245,158,11,0.10);border-color:rgba(245,158,11,0.3)}
 .c-bad{color:#f08a8a;background:rgba(224,85,85,0.12);border-color:rgba(224,85,85,0.35)}
@@ -136,7 +155,7 @@
     <section class="card status-card" aria-labelledby="status-h">
       <div class="status-head">
         <h2 class="card-title" id="status-h">Player status</h2>
-        <span class="hint" id="status-note">Worst first · today</span>
+        <span class="hint" id="status-note">Worst first · today · tap availability to change it</span>
       </div>
       <div id="status-body"><div class="empty" style="border:0">Loading player status…</div></div>
     </section>
@@ -211,6 +230,9 @@ async function init(){
     settle(SC.readTab("SESSIONS")), settle(SC.readTab("SESSION EXERCISES")), settle(SC.loadStrengthLog()),
     settle(loadTreatmentToday())
   ]);
+  /* A status changed here is held on screen until the published feed shows it. */
+  if(physio.ok) applyPending(physio.v);
+  checkPhysioSaving();
   renderTreatment(treat, roster.ok && roster.v.length ? roster.v : null);
   /* A later check-in can cancel a booking, so the treatment flag on the
      status table and the KPI follow each player's latest row today too. */
@@ -231,19 +253,13 @@ async function init(){
     const w=well.ok ? (well.v[p.slug]||null) : null;
     const l=load.ok ? (load.v[p.slug]||null) : null;
     const mine=todays.filter(s=>(","+s.players+",").indexOf(","+p.slug+",")>=0);
-    let bad=0, watch=0, any=false;
-    if(ph){ const m=Math.max(ph.si,ph.sg); if(m>=0) any=true; if(m>=2) bad++; else if(m===1) watch++; }
-    if(w){ any=true;
-      if(w.treatment || w.flags.some(f=>f.level==="bad")) bad++;
-      else if(w.flags.length || w.note) watch++; }
-    if(l && l.acwr!=null){ any=true; if(l.status.cls==="bad") bad++; else if(l.status.cls==="watch") watch++; }
-    const level=bad?"bad":watch?"watch":any?"good":"gray";
-    return {p, ph, w, l, mine, bad, watch, level};
+    return scoreRow({p, ph, w, l, mine});
   });
   const rank={bad:0,watch:1,good:2,gray:3};
   people.sort((a,b)=>rank[a.level]-rank[b.level] || b.bad-a.bad || b.watch-a.watch || a.p.name.localeCompare(b.p.name));
 
-  renderKPIs(people, {physio:physio.ok, well:well.ok, load:load.ok});
+  VIEW.people=people; VIEW.ok={physio:physio.ok, well:well.ok, load:load.ok};
+  renderKPIs(people, VIEW.ok);
   renderStatus(people, {physio:physio.ok, well:well.ok, load:load.ok, sc:sessions.ok && sessions.v.setUp}, exCount, loggedToday);
 
   if(sessions.ok && sessions.v.setUp){
@@ -380,10 +396,7 @@ function renderStatus(people, ok, exCount, loggedToday){
     let avail;
     if(!ok.physio) avail=[el("span",{class:"why",text:"Physio feed unreachable"})];
     else if(!x.ph) avail=[el("div",{class:"pills"},[el("span",{class:"pill c-gray",text:"Not on physio sheet"})])];
-    else avail=[el("div",{class:"pills"},[
-      el("span",{class:"pill c-"+(x.ph.si<0?"gray":CLS[x.ph.si])},[el("small",{text:"Injury"}), x.ph.injury||"Not set"]),
-      el("span",{class:"pill c-"+(x.ph.sg<0?"gray":CLS[x.ph.sg])},[el("small",{text:"Game"}), x.ph.game||"Not set"])
-    ])];
+    else avail=[el("div",{class:"pills"},[ statusPill(x,"injury"), statusPill(x,"game") ])];
 
     /* wellness */
     let well;
@@ -425,7 +438,7 @@ function renderStatus(people, ok, exCount, loggedToday){
 
     grid.appendChild(el("div",{class:"st-row"},[
       el("div",{class:"st-player"},[
-        el("span",{class:"lvl lvl-"+x.level}), SC.avatar(p),
+        (x.lvlEl=el("span",{class:"lvl lvl-"+x.level})), SC.avatar(p),
         el("div",{style:"min-width:0"},[
           el("div",{class:"p-name",text:p.name}),
           el("div",{class:"p-sub",text:[p.pos, p.num!==""?"#"+p.num:""].filter(Boolean).join(" · ")}) ])
@@ -434,6 +447,168 @@ function renderStatus(people, ok, exCount, loggedToday){
     ]));
   });
   body.appendChild(grid);
+}
+
+/* ---------- Availability: change it from the dashboard ----------
+   Tapping a pill lists the same options as the physio sheet's drop-downs.
+   A pick is saved through the Player Portal Endpoint (request type
+   "sc_physio_status", handled by Physio.gs), which sets that one cell on the
+   physio sheet's Status tab. The Dashboard Feed tab mirrors it, so the
+   Coaches Hub dashboard and Attendance & Injury show it too.
+   The published feed lags a few minutes, so a change is held on this
+   device until the feed shows it (or for 15 minutes at most). */
+const STATUS_OPTS={
+  injury:["Healthy","Questionable","Day to Day","Doubtful","Out"],
+  game:["Available","Probable","Questionable","Doubtful","Out"]
+};
+const STATUS_SEV={
+  injury:{"healthy":0,"questionable":1,"day to day":1,"day-to-day":1,"doubtful":2,"out":3},
+  game:{"available":0,"probable":1,"questionable":1,"doubtful":2,"out":3}
+};
+const FIELD_LABEL={injury:"Injury", game:"Game"};
+const PENDING_KEY="89ers_physio_pending", HOLD_MS=15*60*1000;
+const VIEW={people:[], ok:{}};
+let physioLive=null;   /* null = not checked yet, true / false once the endpoint has answered */
+
+function sevFor(field,v){ const k=String(v||"").trim().toLowerCase(); if(!k) return -1; return k in STATUS_SEV[field] ? STATUS_SEV[field][k] : 1; }
+function setStatus(ph,field,v){ ph[field]=v; if(field==="injury") ph.si=sevFor("injury",v); else ph.sg=sevFor("game",v); }
+
+/* Same rules the table has always used for the coloured bar and the sort. */
+function scoreRow(x){
+  const {ph,w,l}=x; let bad=0, watch=0, any=false;
+  if(ph){ const m=Math.max(ph.si,ph.sg); if(m>=0) any=true; if(m>=2) bad++; else if(m===1) watch++; }
+  if(w){ any=true;
+    if(w.treatment || w.flags.some(f=>f.level==="bad")) bad++;
+    else if(w.flags.length || w.note) watch++; }
+  if(l && l.acwr!=null){ any=true; if(l.status.cls==="bad") bad++; else if(l.status.cls==="watch") watch++; }
+  x.bad=bad; x.watch=watch; x.level=bad?"bad":watch?"watch":any?"good":"gray";
+  return x;
+}
+
+/* --- changes waiting for the published feed (this device only) --- */
+function readPending(){ try{ return JSON.parse(localStorage.getItem(PENDING_KEY)||"{}")||{}; }catch(e){ return {}; } }
+function writePending(o){ try{ localStorage.setItem(PENDING_KEY, JSON.stringify(o)); }catch(e){} }
+function applyPending(byName){
+  Object.keys(byName).forEach(k=>{ const ph=byName[k]; ph.feed={injury:ph.injury, game:ph.game}; });   /* what the feed itself says */
+  const pend=readPending(), now=Date.now();
+  Object.keys(pend).forEach(key=>{
+    const ph=byName[key];
+    ["injury","game"].forEach(f=>{
+      const c=pend[key] && pend[key][f]; if(!c) return;
+      const feed=ph ? ph[f] : null;
+      if(ph && feed===c.from && now-c.t<HOLD_MS) setStatus(ph,f,c.to);   /* feed not caught up yet */
+      else delete pend[key][f];             /* caught up, changed by someone else, or too old */
+    });
+    if(!pend[key] || !Object.keys(pend[key]).length) delete pend[key];
+  });
+  writePending(pend);
+}
+function rememberPending(key,field,feedValue,to){
+  const pend=readPending(); pend[key]=pend[key]||{};
+  const from=pend[key][field] ? pend[key][field].from : feedValue;   /* keep what the feed still says */
+  if(from===to) delete pend[key][field]; else pend[key][field]={from, to, t:Date.now()};
+  if(!Object.keys(pend[key]).length) delete pend[key];
+  writePending(pend);
+}
+
+/* Before Physio.gs is deployed, "sc_physio_" requests reach the S&C
+   handler, which refuses types it does not know: nothing is written. */
+async function checkPhysioSaving(){
+  try{ const out=await SC.post("sc_physio_ping"); physioLive=out.physio===true; }
+  catch(e){ physioLive=/slug|unknown/i.test(String(e.message)) ? false : null; }
+}
+
+function pillClass(ph,field){ const s=field==="injury"?ph.si:ph.sg; return "pill c-"+(s<0?"gray":CLS[s]); }
+function statusPill(x,field){
+  const ph=x.ph;
+  const b=el("button",{type:"button", class:pillClass(ph,field), "aria-haspopup":"menu", "aria-expanded":"false",
+    "aria-label":FIELD_LABEL[field]+" status for "+x.p.name+": "+(ph[field]||"Not set")+". Tap to change."},
+    [el("small",{text:FIELD_LABEL[field]}), ph[field]||"Not set"]);
+  b.addEventListener("click",e=>{ e.stopPropagation(); if(b.classList.contains("saving")) return; openMenu(b,x,field); });
+  return b;
+}
+function refreshPill(b,x,field){
+  const ph=x.ph;
+  b.className=pillClass(ph,field);
+  b.textContent=""; b.appendChild(el("small",{text:FIELD_LABEL[field]})); b.appendChild(document.createTextNode(ph[field]||"Not set"));
+  b.setAttribute("aria-label",FIELD_LABEL[field]+" status for "+x.p.name+": "+(ph[field]||"Not set")+". Tap to change.");
+}
+
+let menuEl=null, menuBtn=null;
+function closeMenu(focusBack){
+  if(!menuEl) return;
+  menuEl.remove(); menuEl=null;
+  if(menuBtn){ menuBtn.setAttribute("aria-expanded","false"); if(focusBack) menuBtn.focus(); }
+  menuBtn=null;
+}
+function openMenu(btn,x,field){
+  const same=menuBtn===btn; closeMenu(false); if(same) return;
+  const cur=String(x.ph[field]||"").toLowerCase();
+  const opts=STATUS_OPTS[field].map(v=>{
+    const on=v.toLowerCase()===cur, s=sevFor(field,v);
+    const o=el("button",{type:"button", class:"am-opt", role:"menuitemradio", "aria-checked":on?"true":"false"},[
+      el("span",{class:"am-dot "+CLS[s]}), v, on?el("span",{class:"am-tick",text:"✓"}):null ]);
+    o.addEventListener("click",e=>{ e.stopPropagation(); closeMenu(true); if(!on) choose(btn,x,field,v); });
+    return o;
+  });
+  menuEl=el("div",{class:"am-menu", role:"menu", "aria-label":FIELD_LABEL[field]+" status, "+x.p.name},
+    [el("div",{class:"am-head",text:FIELD_LABEL[field]+" status · "+x.p.name})]
+      .concat(physioLive===false ? [el("div",{class:"am-off",text:"Saving from the dashboard isn't switched on yet. Change it on the physio sheet for now."})] : [])
+      .concat(opts));
+  if(physioLive===false) opts.forEach(o=>o.disabled=true);
+  menuEl.addEventListener("click",e=>e.stopPropagation());
+  menuEl.addEventListener("keydown",e=>{
+    const list=opts.filter(o=>!o.disabled), i=list.indexOf(document.activeElement);
+    if(e.key==="Escape"){ e.preventDefault(); closeMenu(true); }
+    else if(e.key==="ArrowDown"&&list.length){ e.preventDefault(); list[(i+1)%list.length].focus(); }
+    else if(e.key==="ArrowUp"&&list.length){ e.preventDefault(); list[(i-1+list.length)%list.length].focus(); }
+  });
+  document.body.appendChild(menuEl);
+  menuBtn=btn; btn.setAttribute("aria-expanded","true");
+
+  /* below the pill, or above it if there is no room; kept on screen */
+  const r=btn.getBoundingClientRect(), m=menuEl.getBoundingClientRect();
+  let top=r.bottom+6; if(top+m.height>innerHeight-8 && r.top-6-m.height>8) top=r.top-6-m.height;
+  const left=Math.max(8, Math.min(r.left, innerWidth-m.width-8));
+  menuEl.style.top=top+"px"; menuEl.style.left=left+"px";
+  const first=opts.find(o=>o.getAttribute("aria-checked")==="true"&&!o.disabled) || opts.find(o=>!o.disabled);
+  if(first) first.focus({preventScroll:true});
+}
+document.addEventListener("click",()=>closeMenu(false));
+window.addEventListener("scroll",()=>closeMenu(false),true);
+window.addEventListener("resize",()=>closeMenu(false));
+
+async function choose(btn,x,field,value){
+  const key=SC.nameKey(x.ph.name), before=x.ph[field], feedValue=x.ph.feed[field];
+  setStatus(x.ph,field,value); refreshPill(btn,x,field); restyleRow(x);
+  btn.classList.add("saving"); btn.setAttribute("aria-busy","true");
+  try{
+    const out=await SC.post("sc_physio_status",{player:x.ph.name, field, value});
+    physioLive=true;
+    setStatus(x.ph,field,out.value||value); refreshPill(btn,x,field); restyleRow(x);
+    rememberPending(key,field,feedValue,x.ph[field]);
+    toast(x.p.name+": "+FIELD_LABEL[field]+" "+x.ph[field]+". Saved to the physio sheet.");
+  }catch(e){
+    setStatus(x.ph,field,before); refreshPill(btn,x,field); restyleRow(x);
+    if(/slug|unknown/i.test(String(e.message))){ physioLive=false; toast("Not saved: saving from the dashboard isn't switched on yet.",true); }
+    else toast("Not saved: "+(e.message||"no answer from the sheet")+". "+x.p.name+"'s "+FIELD_LABEL[field].toLowerCase()+" status is still "+(before||"not set")+".",true);
+  }finally{
+    btn.classList.remove("saving"); btn.removeAttribute("aria-busy");
+  }
+}
+/* The row keeps its place until the next load, so it doesn't jump from under a finger. */
+function restyleRow(x){
+  scoreRow(x);
+  if(x.lvlEl) x.lvlEl.className="lvl lvl-"+x.level;
+  renderKPIs(VIEW.people, VIEW.ok);
+}
+
+let toastEl=null, toastT=0;
+function toast(msg,err){
+  if(!toastEl){ toastEl=el("div",{class:"am-toast", role:"status", "aria-live":"polite"}); document.body.appendChild(toastEl); }
+  toastEl.textContent=msg; toastEl.classList.toggle("err",!!err);
+  requestAnimationFrame(()=>toastEl.classList.add("show"));
+  clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove("show"), err?6000:3500);
 }
 
 if(sessionStorage.getItem("89ers_auth")==="1") showApp();
