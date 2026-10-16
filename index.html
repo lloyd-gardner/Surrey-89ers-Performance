@@ -48,6 +48,14 @@
 .av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%}
 .p-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .p-sub{font-size:11px;color:var(--offwhite-mid)}
+/* photo + name open the player's portal in a new tab */
+.p-link{display:flex;align-items:center;gap:11px;min-width:0;color:inherit;text-decoration:none;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.p-link .p-name{transition:color .12s}
+a.p-link .p-name::after{content:" ↗";font-size:10px;color:var(--green-text);opacity:0;transition:opacity .12s}
+a.p-link:hover .p-name,a.p-link:focus-visible .p-name{color:var(--green-text)}
+a.p-link:hover .p-name::after,a.p-link:focus-visible .p-name::after{opacity:1}
+.p-link:focus-visible{outline:2px solid var(--green-text);outline-offset:3px}
+.treat-who-link{flex:1}
 .cell-label{display:none;font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--offwhite-mid)}
 .pills{display:flex;gap:5px;flex-wrap:wrap}
 .pill{font-size:10px;font-weight:700;letter-spacing:.3px;padding:3px 8px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
@@ -155,7 +163,7 @@ button.pill.saving{opacity:.55;cursor:progress}
     <section class="card status-card" aria-labelledby="status-h">
       <div class="status-head">
         <h2 class="card-title" id="status-h">Player status</h2>
-        <span class="hint" id="status-note">Worst first · today · tap availability to change it</span>
+        <span class="hint" id="status-note">Worst first · today · tap a player to open their portal, availability to change it</span>
       </div>
       <div id="status-body"><div class="empty" style="border:0">Loading player status…</div></div>
     </section>
@@ -215,6 +223,15 @@ function showApp(){
 }
 
 const el=SC.el, $=id=>document.getElementById(id);
+
+/* Each player's own portal page on the players site (the same link the
+   Coaches Hub Players page uses). Opens in a new tab so the dashboard stays put. */
+const PORTAL_BASE="https://surrey-89ers-players.vercel.app/";
+function playerLink(p, kids, cls){
+  if(!p || !p.slug) return el("div",{class:"p-link"+(cls?" "+cls:"")},kids);
+  return el("a",{class:"p-link"+(cls?" "+cls:""), href:PORTAL_BASE+encodeURIComponent(p.slug),
+    target:"_blank", rel:"noopener", title:"Open "+(p.name||"player")+"'s portal in a new tab"}, kids);
+}
 const CLS={0:"good",1:"watch",2:"bad",3:"bad"};
 
 /* Each source loads on its own: if one is unreachable its column says so
@@ -332,12 +349,12 @@ function renderTreatment(treat, roster){
     const p=x.p;
     grid.appendChild(el("div",{class:"treat-row"},[
       x.b.time ? el("div",{class:"treat-time",text:x.b.time}) : el("div",{class:"treat-time none",text:"No time booked"}),
-      SC.avatar(p),
-      el("div",{class:"treat-who"},[
-        el("div",{class:"p-name",text:p.name}),
-        el("div",{class:"p-sub",text:[p.pos, p.num!==""?"#"+p.num:""].filter(Boolean).join(" · ")}),
-        x.b.note ? el("div",{class:"note",title:x.b.note,text:"“"+x.b.note+"”"}) : null
-      ])
+      playerLink(p,[ SC.avatar(p),
+        el("div",{class:"treat-who"},[
+          el("div",{class:"p-name",text:p.name}),
+          el("div",{class:"p-sub",text:[p.pos, p.num!==""?"#"+p.num:""].filter(Boolean).join(" · ")}),
+          x.b.note ? el("div",{class:"note",title:x.b.note,text:"“"+x.b.note+"”"}) : null
+        ]) ], "treat-who-link")
     ]));
   });
   body.appendChild(grid);
@@ -438,10 +455,11 @@ function renderStatus(people, ok, exCount, loggedToday){
 
     grid.appendChild(el("div",{class:"st-row"},[
       el("div",{class:"st-player"},[
-        (x.lvlEl=el("span",{class:"lvl lvl-"+x.level})), SC.avatar(p),
-        el("div",{style:"min-width:0"},[
-          el("div",{class:"p-name",text:p.name}),
-          el("div",{class:"p-sub",text:[p.pos, p.num!==""?"#"+p.num:""].filter(Boolean).join(" · ")}) ])
+        (x.lvlEl=el("span",{class:"lvl lvl-"+x.level})),
+        playerLink(p,[ SC.avatar(p),
+          el("div",{style:"min-width:0"},[
+            el("div",{class:"p-name",text:p.name}),
+            el("div",{class:"p-sub",text:[p.pos, p.num!==""?"#"+p.num:""].filter(Boolean).join(" · ")}) ]) ])
       ]),
       cell("Availability", avail), cell("Wellness today", well), cell("Training load", load), cell("S&C today", sc)
     ]));
