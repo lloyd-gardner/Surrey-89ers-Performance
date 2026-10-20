@@ -14,7 +14,9 @@
         back link and side navigation stay inside this hub.
 
    To add a section: add it to SECTIONS. If it is a Coaches Hub page,
-   also add a rewrite for it in vercel.json.
+   also add a rewrite for it in vercel.json. A page that must stay on
+   the Coaches Hub address (Microsoft sign-in) gets ext: true and a full
+   COACHES_HUB address instead; it opens in a new tab.
    ============================================================ */
 (function () {
   var COACHES_HUB = "https://surrey-89ers-coaches-zsex.vercel.app/";
@@ -24,7 +26,10 @@
     { group: "Strength & Conditioning", href: "sc-sessions.html", icon: "🗓", label: "Sessions",         sub: "Build, assign and publish sessions" },
     { group: "Strength & Conditioning", href: "sc-library.html",  icon: "🎬", label: "Exercise Library", sub: "Exercises with demo videos and cues" },
     { group: "Therapy",  href: "therapy.html",       icon: "🩺", label: "Therapy",             sub: "The physio's area" },
-    { group: "Therapy",  href: "clinic-notes.html",  icon: "🗒", label: "Clinic Notes",        sub: "SOAP note with body chart, saved as a PDF" },
+    // Clinic Notes and the Treatment Log live on the Coaches Hub for now: their
+    // Microsoft sign-in is registered to that address only. They open in a new tab.
+    { group: "Therapy",  href: COACHES_HUB + "performance.html", ext: true, icon: "🗒", label: "Clinic Notes",  sub: "SOAP notes in SharePoint (Coaches Hub, Microsoft sign-in)" },
+    { group: "Therapy",  href: COACHES_HUB + "treatment.html",   ext: true, icon: "🩹", label: "Treatment Log", sub: "Treatment list and injury records (Coaches Hub, Microsoft sign-in)" },
     { group: "Squad",    href: "wellness.html",      icon: "📈", label: "Squad Wellness",      sub: "Daily check-ins and flags" },
     { group: "Squad",    href: "load.html",          icon: "📊", label: "Training Load",       sub: "Session RPE and ACWR" },
     { group: "Squad",    href: "attendance.html",    icon: "📝", label: "Attendance & Injury", sub: "Season attendance grid and physio status" },
@@ -41,15 +46,17 @@
     }
   }
 
-  function navItem(href, icon, label, active) {
+  function navItem(href, icon, label, active, ext) {
     var d = document.createElement("div");
     d.className = "nav-item" + (active ? " active" : "");
     var i = document.createElement("span");
     i.className = "nav-icon";
     i.textContent = icon;
     d.appendChild(i);
-    d.appendChild(document.createTextNode(" " + label));
-    d.addEventListener("click", function () { location.href = href; });
+    d.appendChild(document.createTextNode(" " + label + (ext ? " ↗" : "")));
+    d.addEventListener("click", function () {
+      if (ext) window.open(href, "_blank", "noopener"); else location.href = href;
+    });
     return d;
   }
 
@@ -66,7 +73,7 @@
     var group = "";
     SECTIONS.forEach(function (s) {
       if (s.group !== group) { group = s.group; nav.appendChild(groupLabel(group)); }
-      nav.appendChild(navItem(s.href, s.icon, s.label, here === s.href));
+      nav.appendChild(navItem(s.href, s.icon, s.label, here === s.href, s.ext));
     });
     nav.appendChild(groupLabel("More"));
     nav.appendChild(navItem(COACHES_HUB, "↗", "Coaches Hub", false));

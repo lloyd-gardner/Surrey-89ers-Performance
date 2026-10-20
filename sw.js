@@ -1,8 +1,8 @@
 // Surrey 89ers Performance Hub — Service Worker
 // Network first, so pages and data are always current when online;
 // the cache is only a fallback for a dropped connection.
-const CACHE = '89ers-performance-v4';
-const CORE = ['/index.html', '/hub.js', '/sc.css', '/sc.js', '/sc-overview.html', '/sc-sessions.html', '/sc-library.html', '/therapy.html', '/clinic-notes.html', '/body-chart.png'];
+const CACHE = '89ers-performance-v5';
+const CORE = ['/index.html', '/hub.js', '/sc.css', '/sc.js', '/sc-overview.html', '/sc-sessions.html', '/sc-library.html', '/therapy.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
