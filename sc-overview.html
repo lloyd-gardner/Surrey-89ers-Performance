@@ -74,7 +74,65 @@ table.part{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
 .week-name{flex:1;min-width:140px;font-weight:600}
 .week-meta{font-size:12px;color:var(--offwhite-mid)}
 .two{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+.st-live{color:#8cbcff;background:rgba(96,165,250,0.10);border-color:rgba(96,165,250,0.35)}
 
+/* session feed */
+.daynav{display:flex;align-items:center;gap:8px}
+.daynav-l{font-weight:600;min-width:150px;text-align:center;font-size:13.5px}
+.feed-body{padding:16px;display:flex;flex-direction:column;gap:14px}
+.strip{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 18px;border-radius:12px;background:var(--card2);border:1px solid var(--border-soft)}
+.strip-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px}
+.strip-sub{font-size:12.5px;color:var(--offwhite-mid);margin-top:2px}
+.strip-stats{display:flex;gap:28px;flex-wrap:wrap}
+.sv{display:flex;flex-direction:column}
+.sv-l{font-size:11.5px;color:var(--offwhite-mid)}
+.sv-v{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700}
+.sv-v small{font-size:13px;color:var(--muted);font-weight:600}
+.fchip .n{font-family:'Space Grotesk',sans-serif;opacity:.8;margin-left:4px}
+.fchip.amber:not([aria-pressed="true"]){border-color:rgba(245,158,11,0.45);color:#f6c56b}
+.fcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(440px,100%),1fr));gap:14px;align-items:start}
+.fc{background:var(--card2);border:1px solid var(--border-soft);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.fc.look{border-color:rgba(245,158,11,0.5)}
+.fc-top{display:flex;align-items:center;gap:12px}
+.fc-top .av{width:42px;height:42px}
+.fc-who{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.fc-name{align-self:flex-start;max-width:100%;background:none;border:0;padding:0;color:var(--offwhite);font-weight:700;font-size:15px;cursor:pointer;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc-name:hover{color:var(--green-text)}
+.fc-when{font-size:12px;color:var(--offwhite-mid)}
+.stats5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.st5{padding:9px 10px;border-radius:9px;background:rgba(0,0,0,0.25);display:flex;flex-direction:column;gap:1px;min-width:0}
+.st5-l{font-size:11px;color:var(--offwhite-mid);white-space:nowrap}
+.st5-v{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;white-space:nowrap}
+.st5-v small{font-size:12px;color:var(--muted)}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.ftag{padding:3px 10px;border-radius:999px;border:1px solid var(--field-border);font-size:12px;font-weight:600;color:var(--offwhite)}
+.ftag.good{border-color:rgba(74,222,128,0.35);color:var(--green-text)}
+.ftag.warn{border-color:rgba(245,158,11,0.45);color:#f6c56b}
+.ftag.bad{border-color:rgba(224,85,85,0.5);color:#f0a0a0}
+.fc-note{font-size:13px;line-height:1.45;color:var(--offwhite)}
+.fline{padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;line-height:1.4}
+.fline.pb{background:rgba(74,222,128,0.08);color:var(--green-text)}
+.fline.warn{background:rgba(245,158,11,0.09);color:#f6c56b}
+.stbl{border:1px solid var(--border-soft);border-radius:10px;overflow:hidden}
+.st-row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1.5fr);gap:10px;padding:8px 12px;border-top:1px solid var(--border-soft);font-size:13px}
+.st-row.head{border-top:0;background:rgba(0,0,0,0.25);font-size:11px;font-weight:600;color:var(--offwhite-mid)}
+.st-row .mono{font-family:'Space Grotesk',sans-serif;font-size:12.5px}
+.st-row .plan{color:var(--offwhite-mid)}
+.st-row .amber{color:var(--amber)}
+.cmts{display:flex;flex-direction:column;gap:6px}
+.cmt-item{font-size:12.5px;line-height:1.45;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,0.25)}
+.cmt-item span{color:var(--offwhite-mid)}
+.cmt-form{display:flex;gap:8px}
+.cmt-form .input{flex:1;min-width:0}
+.fc-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-remind{color:#f6c56b;border-color:rgba(245,158,11,0.45);background:transparent}
+.btn-done{color:var(--green-text);border-color:var(--green);background:var(--green-dim)}
+
+@media (max-width:480px){
+  .stats5{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .strip-stats{gap:18px}
+  .daynav-l{min-width:0}
+}
 @media (max-width:980px){
   .prog{flex-direction:column}
   .prog-side{width:100%;flex-direction:row;flex-wrap:wrap}
@@ -106,6 +164,18 @@ table.part{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
     </div>
     <div id="banners"></div>
     <div class="kpi-row" id="kpis"></div>
+
+    <section class="card sec" aria-labelledby="feed-h" id="feed-sec">
+      <div class="sec-head">
+        <h2 class="card-title" id="feed-h">Session feed</h2>
+        <div class="daynav">
+          <button class="btn btn-icon" type="button" id="day-prev" aria-label="Previous day">‹</button>
+          <span class="daynav-l" id="day-label" aria-live="polite"></span>
+          <button class="btn btn-icon" type="button" id="day-next" aria-label="Next day">›</button>
+        </div>
+      </div>
+      <div class="feed-body" id="feed"></div>
+    </section>
 
     <div class="two">
       <section class="card sec" aria-labelledby="wk-h">
@@ -143,7 +213,7 @@ table.part{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
         <span class="hint">Lowest 4-week rate first · tap a name to chart them</span>
       </div>
       <div class="tbl-wrap" id="part"></div>
-      <div class="hint" style="padding:10px 16px 14px">A session counts as done when a player has logged every exercise on its date, and partial when they logged some. The 4-week rate is the share of assigned sessions with anything logged. Player portals do not show hub sessions yet, so until they do this counts any strength log saved on the session's date.</div>
+      <div class="hint" style="padding:10px 16px 14px">A session counts as done when a player sends their rating or logs every set, and partial when they log some, on whatever day they do it. The 4-week rate is the share of assigned sessions with anything logged.</div>
     </section>
   </div>
 </div>
@@ -159,6 +229,7 @@ const METRICS = [["top","Top set (kg)"],["e1rm","Est. 1RM (kg)"],["vol","Volume 
 const ST = {done:"Done", partial:"Partial", missed:"Missed", todo:"Not started", upcoming:"Upcoming", na:"—"};
 
 let ROSTER = [], SESSIONS = [], ROWS = {}, LOG = [], LIB = {};
+let SLOG = [], PROG = {}, READY = {}, COMMENTS = [], ALLSES = [];
 let player = "", exKey = "", metric = "top", compare = true;
 const today = SC.todayISO();
 
@@ -167,27 +238,72 @@ function assigned(s, slug){ return ("," + s.players + ",").indexOf("," + slug + 
 function fmt(v){ if(v >= 1000) return Math.round(v).toLocaleString("en-GB"); return Number.isInteger(v) ? String(v) : v.toFixed(1); }
 function dayLabel(iso){ return SC.parseDate(iso).toLocaleDateString("en-GB",{weekday:"short", day:"numeric"}); }
 
-/* done / partial / missed / todo / upcoming / na for one player and one session */
+/* ---------- what a player logged against a session ----------
+   Each exercise has one line per set (two for an each-side hold: Left
+   and Right), numbered the same way the portal numbers them. */
+function exercisesOf(sid){
+  return (ROWS[sid] || []).slice().sort((a,b) => Number(a.order) - Number(b.order)).map(r => {
+    const lib = LIB[r.exercise_id] || {};
+    const time = (r.measure || lib.measure || "reps") === "time", each = SC.isTrue(r.each_side);
+    const sets = Math.max(1, parseInt(r.sets, 10) || 1), lines = [];
+    for(let n = 1; n <= sets; n++){
+      if(time && each){ lines.push({n:lines.length + 1, set:n, side:"L"}); lines.push({n:lines.length + 1, set:n, side:"R"}); }
+      else lines.push({n:n, set:n, side:""});
+    }
+    return { r:r, code:r.code || r.block || String(r.order), name:r.exercise || lib.name || "Exercise", time:time, each:each,
+      sets:sets, amount:parseFloat(r.amount) || null, lines:lines };
+  });
+}
+/* PROG[sid][slug] = { sets:{"A1|3": row}, fb: row, first, last } — latest row wins */
+function buildProgress(){
+  PROG = {};
+  SLOG.forEach(r => {
+    const P = ((PROG[r.block] = PROG[r.block] || {})[r.slug] = PROG[r.block][r.slug] || { sets:{}, fb:null, first:null, last:null, firstDate:"" });
+    const newer = (a, b) => !a || (r.ts || 0) >= (a.ts || 0);
+    if(r.code === "SESSION"){ if(newer(P.fb)) P.fb = r; return; }
+    const n = parseInt(r.sets, 10); if(!n) return;
+    const k = r.code + "|" + n;
+    if(newer(P.sets[k])) P.sets[k] = r;
+    if(r.ts){
+      if(P.first == null || r.ts < P.first){ P.first = r.ts; P.firstDate = r.date; }
+      if(P.last == null || r.ts > P.last) P.last = r.ts;
+    }else if(!P.firstDate) P.firstDate = r.date;
+  });
+}
+function progressOf(sid, slug){
+  const P = (PROG[sid] || {})[slug] || { sets:{}, fb:null, first:null, last:null, firstDate:"" };
+  let got = 0, all = 0;
+  exercisesOf(sid).forEach(x => x.lines.forEach(l => { all++; if(P.sets[x.code + "|" + l.n]) got++; }));
+  return Object.assign({ got:got, all:all }, P);
+}
+
+/* done / partial / missed / todo / upcoming / na for one player and one session.
+   Sets count on whatever day they were done. */
 function statusFor(s, slug){
   if(!assigned(s, slug)) return "na";
+  const P = progressOf(s.session_id, slug);
+  if(P.fb || (P.all && P.got >= P.all)) return "done";
+  if(P.got) return "partial";
   if(s.date > today) return "upcoming";
-  const want = (ROWS[s.session_id] || []).length;
-  const got = LOG.filter(e => e.slug === slug && e.date === s.date).length;
-  if(got && got >= want) return "done";
-  if(got) return "partial";
   return s.date === today ? "todo" : "missed";
 }
 
 async function load(){
-  const [roster, ses, rows, ex, log] = await Promise.all([
+  const [roster, ses, rows, ex, log, slog, ready, cm] = await Promise.all([
     SC.loadRoster(), SC.readTab("SESSIONS"), SC.readTab("SESSION EXERCISES"), SC.readTab("EXERCISES"),
-    SC.loadStrengthLog().catch(e => { console.error(e); return []; })
+    SC.loadStrengthLog().catch(e => { console.error(e); return []; }),
+    SC.loadSessionLog().catch(e => { console.error(e); return []; }),
+    SC.loadReadiness().catch(e => { console.error(e); return {}; }),
+    SC.readTab("COMMENTS").catch(e => { console.error(e); return {setUp:false, rows:[]}; })
   ]);
-  ROSTER = roster; LOG = log;
+  ROSTER = roster; LOG = log; SLOG = slog; READY = ready;
+  COMMENTS = cm.rows.filter(c => !SC.isTrue(c.archived));
   SESSIONS = ses.rows.filter(s => !SC.isTrue(s.archived) && s.status === "published" && s.date)
     .sort((a,b) => (a.date + a.start_time).localeCompare(b.date + b.start_time));
   ROWS = {}; rows.rows.forEach(r => (ROWS[r.session_id] = ROWS[r.session_id] || []).push(r));
   LIB = {}; ex.rows.forEach(x => LIB[x.exercise_id] = x);
+  ALLSES = ses.rows.filter(s => !SC.isTrue(s.archived) && s.status === "published");
+  buildProgress();
   return ses.setUp;
 }
 
@@ -222,10 +338,20 @@ function renderKPIs(attention){
   box.appendChild(kpi("Participation · 4 weeks", pct == null ? "—" : pct + "%", "", pct == null ? "No published sessions in the last 4 weeks" : "squad average · target 90%", pct == null ? "gray" : pct >= 90 ? "good" : pct >= 75 ? "watch" : "bad"));
 
   const from = SC.addDaysISO(today, -6);
-  const rpes = LOG.filter(e => e.rpe != null && e.date >= from).map(e => e.rpe);
-  box.appendChild(kpi("Avg session RPE", rpes.length ? SC.mean(rpes).toFixed(1) : "—", rpes.length ? "/ 10" : "", rpes.length ? "last 7 days" : "No RPE logged in the last 7 days", rpes.length ? "" : "gray"));
+  const fbs = latestRatings().filter(r => r.date >= from && !isNaN(parseFloat(r.rpe)));
+  const rpes = fbs.map(r => parseFloat(r.rpe));
+  const planned = fbs.map(r => { const s = ALLSES.find(x => x.session_id === r.block); return s ? parseFloat(s.planned_rpe) : NaN; }).filter(v => !isNaN(v));
+  box.appendChild(kpi("Avg session RPE", rpes.length ? SC.mean(rpes).toFixed(1) : "—", rpes.length ? "/ 10" : "",
+    rpes.length ? (planned.length ? "planned " + SC.mean(planned).toFixed(1) + " · " : "") + "players' ratings · last 7 days" : "No session ratings in the last 7 days", rpes.length ? "" : "gray"));
 
   box.appendChild(kpi("Needs attention", String(attention.length), "", attention.length ? (attention.length === 1 ? "flag · see below" : "flags · see below") : "Nobody flagged", attention.length ? "watch" : ""));
+}
+
+/* each player's latest rating per session */
+function latestRatings(){
+  const out = [];
+  Object.keys(PROG).forEach(sid => Object.keys(PROG[sid]).forEach(slug => { const fb = PROG[sid][slug].fb; if(fb) out.push(fb); }));
+  return out;
 }
 
 /* ---------- this week ---------- */
@@ -262,15 +388,17 @@ function buildAttention(){
       out.push({p:p, tag:"Low participation", cls:"st-missed", why:r.hit + " of " + r.n + " assigned sessions logged over the last 4 weeks."});
     SESSIONS.filter(s => s.date === today && statusFor(s, p.slug) === "todo")
       .forEach(s => out.push({p:p, tag:"Not started", cls:"st-todo", why:s.name + " is today and nothing is logged yet."}));
-    LOG.filter(e => e.slug === p.slug && e.date >= from7 && e.rpe != null && e.rpe >= 9)
-      .slice(0, 1).forEach(e => out.push({p:p, tag:"High RPE", cls:"st-partial", why:"Rated " + e.rpe + " / 10 on " + SC.prettyDate(e.date) + " (" + e.exercise + ")."}));
+    latestRatings().filter(r => r.slug === p.slug && r.date >= from7).forEach(r => {
+      const s = ALLSES.find(x => x.session_id === r.block), rpe = parseFloat(r.rpe), plan = s ? parseFloat(s.planned_rpe) : NaN;
+      if(isNaN(rpe) || !(isNaN(plan) ? rpe >= 9 : rpe - plan >= 2)) return;
+      out.push({p:p, tag:"High RPE", cls:"st-partial", why:"Rated " + (s ? s.name : "a session") + " " + rpe + " / 10 on " + SC.prettyDate(r.date) + (isNaN(plan) ? "." : ". Planned " + plan + ".")});
+    });
     SESSIONS.filter(s => s.date >= from7 && s.date <= today && assigned(s, p.slug)).forEach(s => {
-      (ROWS[s.session_id] || []).forEach(x => {
-        const name = (LIB[x.exercise_id] && LIB[x.exercise_id].name) || x.exercise;
-        const e = LOG.find(l => l.slug === p.slug && l.date === s.date && l.exercise.toLowerCase() === name.toLowerCase());
-        const want = Number(x.sets) || 0;
-        if(e && want && e.sets < want)
-          out.push({p:p, tag:"Under target", cls:"st-partial", why:name + " on " + SC.prettyDate(s.date) + ": " + e.sets + " of " + want + " sets logged."});
+      if(statusFor(s, p.slug) !== "done") return;
+      const P = progressOf(s.session_id, p.slug);
+      exercisesOf(s.session_id).forEach(x => {
+        const done = setsDone(x, P);
+        if(done < x.sets) out.push({p:p, tag:"Under target", cls:"st-partial", why:x.name + " in " + s.name + ": " + done + " of " + x.sets + " sets logged."});
       });
     });
   });
@@ -299,6 +427,242 @@ function renderAttention(list){
     ])
   ])));
   if(list.length > 12) box.appendChild(el("div",{class:"hint",style:"padding:8px 0",text:"+" + (list.length - 12) + " more"}));
+}
+
+/* ---------- session feed ---------- */
+
+let feedDay = today, feedSid = "", feedFilter = "all", feedAll = false;
+const feedOpen = {}, cmtSent = {}, remState = {};
+const DISCOMFORT = ["Pain — talk to me", "Tight somewhere"];
+const TAG_TONE = {"Felt great":"good", "Low energy":"warn", "Legs heavy":"warn", "Tight somewhere":"warn", "Pain — talk to me":"bad"};
+
+function hm(ts){ return ts ? SC.hhmm(new Date(ts)) : ""; }
+function isoOfTs(ts){ return ts ? SC.isoDate(new Date(ts)) : ""; }
+function num(v){ const n = parseFloat(String(v == null ? "" : v).replace(",", ".")); return isNaN(n) ? null : n; }
+function kg(n){ return Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10); }
+function setsDone(x, P){
+  let n = 0;
+  for(let set = 1; set <= x.sets; set++) if(x.lines.filter(l => l.set === set).every(l => P.sets[x.code + "|" + l.n])) n++;
+  return n;
+}
+function remKey(sid, slug){ return "sc_rem_" + today + "_" + sid + "_" + slug; }
+function remembered(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function remember(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+
+/* Sessions for the chosen day: published for that day, or logged on it
+   (players can do a session on any day). */
+function feedSessions(day){
+  const ids = new Set(ALLSES.filter(s => s.date === day).map(s => s.session_id));
+  SLOG.forEach(r => { if(r.date === day) ids.add(r.block); });
+  return ALLSES.filter(s => ids.has(s.session_id))
+    .map(s => ({ s:s, n:ROSTER.filter(p => assigned(s, p.slug)).length }))
+    .sort((a,b) => b.n - a.n || a.s.name.localeCompare(b.s.name));
+}
+
+/* Everything one card shows, worked out from the logs. */
+function cardFor(s, p, xs){
+  const P = progressOf(s.session_id, p.slug), fb = P.fb;
+  const st = (fb || (P.all && P.got >= P.all)) ? "done" : P.got ? "live" : "todo";
+  const doneDay = P.firstDate || (fb ? fb.date : "") || feedDay;
+  const ready = (READY[p.slug] || {})[st === "todo" ? feedDay : doneDay];
+  const rpe = fb ? num(fb.rpe) : null, plan = num(s.planned_rpe);
+  const endTs = fb && fb.ts ? fb.ts : P.last;
+  let minutes = null;
+  if(P.first && endTs && isoOfTs(P.first) === isoOfTs(endTs)){ const m = Math.round((endTs - P.first) / 60000); if(m >= 1 && m <= 240) minutes = m; }
+
+  let when;
+  const dayNote = ts => isoOfTs(ts) && isoOfTs(ts) !== feedDay ? SC.prettyDate(isoOfTs(ts)) + " " : "";
+  if(st === "done") when = endTs ? "Finished " + dayNote(endTs) + hm(endTs) : "Finished";
+  else if(st === "live") when = P.first ? "Started " + dayNote(P.first) + hm(P.first) : "Started";
+  else if(feedDay === today) when = ready != null ? "Checked in · not started" : "Hasn't checked in today";
+  else when = ready != null ? "Checked in · didn't log it" : "No check-in that day";
+
+  /* volume, the sets table and anything below the prescription */
+  let vol = 0;
+  const warn = [], rows = [];
+  xs.forEach(x => {
+    const lo = (String(x.r.load || "").match(/\d+(\.\d+)?/) || [])[0];
+    const target = x.r.load_type === "kg" && lo ? parseFloat(lo) : null;
+    let below = false, short = false, light = false;
+    const logged = x.lines.map(l => {
+      const r = P.sets[x.code + "|" + l.n];
+      if(!r) return "—";
+      const w = num(r.weights_kg), reps = num(r.reps), side = l.side ? l.side + " " : "";
+      if(!x.time && w != null && reps != null) vol += w * reps;
+      if(x.amount && reps != null && reps < x.amount){ below = short = true; }
+      if(target != null && w != null && w < target){ below = light = true; }
+      if(x.time) return side + (reps != null ? kg(reps) + " s" : "✓");
+      return side + (w != null ? kg(w) + (reps != null ? "×" + kg(reps) : "") : (reps != null ? kg(reps) + " reps" : "✓"));
+    });
+    const done = setsDone(x, P);
+    if(st === "done" && done < x.sets) warn.push(x.name + ": " + done + " of " + x.sets + " sets logged");
+    if(light) warn.push(x.name + ": below the prescribed " + kg(target) + " kg");
+    else if(short) warn.push(x.name + ": " + (x.time ? "shorter holds than the " + kg(x.amount) + " s" : "fewer reps than the " + kg(x.amount)) + " prescribed");
+    rows.push({ name:x.code + " " + x.name, plan:[SC.prescription(x.r), SC.loadText(x.r)].filter(Boolean).join(" · "),
+      logged:logged.join(" · "), amber:(st === "done" && done < x.sets) || below });
+  });
+  if(rpe != null && (plan != null ? rpe - plan >= 2 : rpe >= 9)) warn.push("RPE " + kg(rpe) + (plan != null ? " — planned " + kg(plan) : " out of 10"));
+
+  /* a new best: the top weight here beats everything the player logged before */
+  let pb = null;
+  if(st !== "todo") xs.forEach(x => {
+    if(x.time) return;
+    let top = null, reps = "";
+    x.lines.forEach(l => { const r = P.sets[x.code + "|" + l.n], w = r ? num(r.weights_kg) : null; if(w != null && (top == null || w > top)){ top = w; reps = r.reps; } });
+    if(top == null) return;
+    const key = x.name.toLowerCase();
+    const prior = LOG.filter(e => e.slug === p.slug && e.exercise.toLowerCase() === key && e.date < doneDay)
+      .reduce((a, e) => Math.max(a, ...e.weights.filter(w => w > 0 && w < 500)), -Infinity);
+    if(prior > 0 && top > prior && (!pb || top - prior > pb.up)) pb = { text:"New best · " + x.name + " " + kg(top) + " kg" + (reps ? " × " + reps : "") + " (up " + kg(top - prior) + " kg)", up:top - prior };
+  });
+
+  const fbp = SC.parseFeedback(fb ? fb.note : "");
+  const look = (st === "done" && warn.length > 0) || (ready != null && ready < 3) || fbp.tags.some(t => DISCOMFORT.indexOf(t) >= 0);
+  return { p:p, s:s, st:st, P:P, when:when, ready:ready, rpe:rpe, plan:plan, minutes:minutes, vol:vol, warn:warn, rows:rows,
+    pb:pb, tags:fbp.tags, note:fbp.text, look:look, sortTs:st === "done" ? (endTs || 0) : (P.first || 0) };
+}
+
+function renderFeed(){
+  const box = $("feed"); box.textContent = "";
+  const d = SC.parseDate(feedDay), yest = SC.addDaysISO(today, -1);
+  $("day-label").textContent = (feedDay === today ? "Today · " : feedDay === yest ? "Yesterday · " : "") + SC.prettyDate(feedDay);
+  $("day-next").disabled = feedDay >= today;
+
+  const list = feedSessions(feedDay);
+  if(!list.length){
+    box.appendChild(el("div",{class:"hint",style:"padding:6px 2px"},["No S&C session planned or logged on " + d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}) + ". ",
+      el("a",{href:"sc-sessions.html",text:"Plan sessions"})]));
+    return;
+  }
+  if(!list.some(x => x.s.session_id === feedSid)) feedSid = list[0].s.session_id;
+  if(list.length > 1) box.appendChild(el("div",{class:"chip-row",role:"group","aria-label":"Session"}, list.map(x =>
+    el("button",{class:"chip",type:"button","aria-pressed":String(x.s.session_id === feedSid),
+      text:x.s.name + " · " + x.n + (x.n === 1 ? " player" : " players") + (x.s.date !== feedDay ? " · planned " + SC.prettyDate(x.s.date) : ""),
+      onclick:()=>{ feedSid = x.s.session_id; feedFilter = "all"; feedAll = false; renderFeed(); }}))));
+
+  const s = list.find(x => x.s.session_id === feedSid).s, xs = exercisesOf(s.session_id);
+  const cards = ROSTER.filter(p => assigned(s, p.slug)).map(p => cardFor(s, p, xs));
+  const ORDER = {done:0, live:1, todo:2};
+  cards.sort((a,b) => ORDER[a.st] - ORDER[b.st] || b.sortTs - a.sortTs || a.p.name.localeCompare(b.p.name));
+
+  const sets = xs.reduce((a, x) => a + x.sets, 0), done = cards.filter(c => c.st === "done");
+  const rpes = done.map(c => c.rpe).filter(v => v != null), readies = cards.map(c => c.ready).filter(v => v != null);
+  const plan = num(s.planned_rpe);
+  const sv = (label, v, of) => el("div",{class:"sv"},[ el("span",{class:"sv-l",text:label}), el("span",{class:"sv-v"},[ v, of ? el("small",{text:" / " + of}) : null ]) ]);
+  box.appendChild(el("div",{class:"strip"},[
+    el("div",{},[ el("div",{class:"strip-name",text:s.name}),
+      el("div",{class:"strip-sub",text:[xs.length + (xs.length === 1 ? " exercise" : " exercises"), sets + (sets === 1 ? " set" : " sets"),
+        plan != null ? "planned RPE " + kg(plan) : "no planned RPE set", s.date !== feedDay ? "planned " + SC.prettyDate(s.date) : ""].filter(Boolean).join(" · ")}) ]),
+    el("div",{class:"strip-stats"},[
+      sv("Completed", String(done.length), String(cards.length)),
+      sv("Avg session RPE", rpes.length ? SC.mean(rpes).toFixed(1) : "—", rpes.length ? "10" : ""),
+      sv("Avg readiness", readies.length ? SC.mean(readies).toFixed(1) : "—", readies.length ? "5" : "")
+    ])
+  ]));
+
+  const FILTERS = [["all","All",() => true],["done","Completed",c => c.st === "done"],["live","In progress",c => c.st === "live"],
+    ["todo","Not started",c => c.st === "todo"],["look","Needs a look",c => c.look]];
+  box.appendChild(el("div",{class:"chip-row",role:"group","aria-label":"Filter the feed"}, FILTERS.map(f => {
+    const n = cards.filter(f[2]).length;
+    return el("button",{class:"chip fchip" + (f[0] === "look" && n ? " amber" : ""),type:"button","aria-pressed":String(feedFilter === f[0]),
+      onclick:()=>{ feedFilter = f[0]; feedAll = false; renderFeed(); }},[ f[1], el("span",{class:"n",text:String(n)}) ]);
+  })));
+
+  const shown = cards.filter(FILTERS.find(f => f[0] === feedFilter)[2]);
+  if(!shown.length){ box.appendChild(el("div",{class:"hint",style:"padding:4px 2px",text:"Nobody in this group."})); return; }
+  const visible = feedAll ? shown : shown.slice(0, 6);
+  box.appendChild(el("div",{class:"fcards"}, visible.map(renderCard)));
+  if(shown.length > visible.length)
+    box.appendChild(el("button",{class:"btn",type:"button",style:"align-self:center;min-height:44px",text:"Show " + (shown.length - visible.length) + " more",
+      onclick:()=>{ feedAll = true; renderFeed(); }}));
+}
+
+function renderCard(c){
+  const p = c.p, s = c.s, id = s.session_id + "|" + p.slug, first = p.name.split(" ")[0];
+  const BADGE = {done:["st-done","Completed"], live:["st-live","In progress"], todo:["st-todo","Not started"]}[c.st];
+  const stat = (label, value, of, color) => el("div",{class:"st5"},[ el("span",{class:"st5-l",text:label}),
+    el("span",{class:"st5-v",style:color ? "color:" + color : ""},[ value, of ? el("small",{text:"/" + of}) : null ]) ]);
+  const amber = "var(--amber)", green = "var(--green-text)";
+  const setsColor = c.st === "done" ? (c.P.got >= c.P.all ? green : amber) : "";
+  const readyColor = c.ready == null ? "" : c.ready < 3 ? amber : c.ready >= 4 ? green : "";
+  const rpeColor = c.rpe != null && (c.plan != null ? c.rpe - c.plan >= 2 : c.rpe >= 9) ? amber : "";
+
+  const kids = [
+    el("div",{class:"fc-top"},[
+      SC.avatar(p),
+      el("div",{class:"fc-who"},[
+        el("button",{class:"fc-name",type:"button",title:"Show " + first + " in the progression chart",text:p.name,onclick:()=>chartPlayer(p.slug)}),
+        el("span",{class:"fc-when",text:[p.pos, c.when].filter(Boolean).join(" · ")})
+      ]),
+      el("span",{class:"chipst " + BADGE[0],text:BADGE[1]})
+    ]),
+    el("div",{class:"stats5"},[
+      stat("Sets", c.P.got + "/" + c.P.all, "", setsColor),
+      stat("Readiness", c.ready == null ? "—" : c.ready.toFixed(1), c.ready == null ? "" : "5", readyColor),
+      stat("Session RPE", c.rpe == null ? "—" : kg(c.rpe), c.rpe == null ? "" : "10", rpeColor),
+      stat("Minutes", c.minutes == null ? "—" : String(c.minutes), ""),
+      stat("Volume kg", c.vol ? Math.round(c.vol).toLocaleString("en-GB") : "—", "")
+    ])
+  ];
+  if(c.tags.length || c.note) kids.push(el("div",{style:"display:flex;flex-direction:column;gap:8px"},[
+    c.tags.length ? el("div",{class:"tags"}, c.tags.map(t => el("span",{class:"ftag " + (TAG_TONE[t] || ""),text:t}))) : null,
+    c.note ? el("div",{class:"fc-note",text:"“" + c.note + "”"}) : null ]));
+  if(c.pb) kids.push(el("div",{class:"fline pb",text:"↗ " + c.pb.text}));
+  if(c.warn.length) kids.push(el("div",{class:"fline warn",text:"⚠ " + c.warn.slice(0, 3).join(" · ") + (c.warn.length > 3 ? " · +" + (c.warn.length - 3) + " more" : "")}));
+
+  const open = !!feedOpen[id], canOpen = c.st !== "todo";
+  if(open && canOpen){
+    const mine = COMMENTS.filter(m => m.session_id === s.session_id && m.slug === p.slug).sort((a,b) => a.created_at.localeCompare(b.created_at));
+    const input = el("input",{class:"input",type:"text",maxlength:"500",placeholder:"Comment on " + first + "'s session","aria-label":"Comment on " + first + "'s session"});
+    const msg = el("span",{role:"status",class:"hint"});
+    const send = el("button",{class:"btn btn-primary",type:"button",text:"Send",onclick:async () => {
+      const text = input.value.trim(); if(!text){ input.focus(); return; }
+      send.disabled = true; send.textContent = "Sending…"; msg.textContent = ""; msg.className = "hint";
+      try{
+        const out = await SC.post("sc_comment_save", {session_id:s.session_id, slug:p.slug, comment:text});
+        COMMENTS.push({comment_id:out.comment_id || "", session_id:s.session_id, slug:p.slug, comment:text, created_at:out.created_at || "", archived:"FALSE"});
+        cmtSent[id] = true; renderFeed();
+      }catch(e){
+        send.disabled = false; send.textContent = "Send"; msg.className = "hint err";
+        msg.textContent = /unknown S&C request/i.test(e.message) ? "Comments aren't switched on yet: the endpoint needs its update deployed. Your text is still in the box." : "Not sent: " + e.message + ". Your text is still in the box.";
+      }
+    }});
+    kids.push(el("div",{style:"display:flex;flex-direction:column;gap:10px"},[
+      el("div",{class:"stbl"},[ el("div",{class:"st-row head"},[ el("span",{text:"Exercise"}), el("span",{text:"Planned"}), el("span",{text:"Logged"}) ]) ]
+        .concat(c.rows.map(r => el("div",{class:"st-row"},[ el("span",{style:"font-weight:600",text:r.name}),
+          el("span",{class:"mono plan",text:r.plan || "—"}), el("span",{class:"mono" + (r.amber ? " amber" : ""),text:r.logged}) ])))),
+      mine.length ? el("div",{class:"cmts"}, mine.map(m => el("div",{class:"cmt-item"},[ el("span",{text:"Coach" + (m.created_at ? " · " + SC.prettyDate(m.created_at.slice(0,10)) + " " + m.created_at.slice(11,16) : "") + " — "}), m.comment ]))) : null,
+      cmtSent[id] ? el("span",{role:"status",class:"hint ok",text:"✓ Comment sent — " + first + " will see it on his session page."}) : null,
+      el("div",{class:"cmt-form"},[ input, send ]),
+      msg
+    ]));
+  }
+
+  const acts = [];
+  if(canOpen) acts.push(el("button",{class:"btn btn-sm",type:"button","aria-expanded":String(open),text:open ? "Hide sets" : "See sets & comment",
+    onclick:()=>{ feedOpen[id] = !open; renderFeed(); }}));
+  if(c.st === "todo" && feedDay === today && s.date <= today){
+    const k = remKey(s.session_id, p.slug), state = remState[id] || remembered(k);
+    const label = state === "sent" ? "Reminder sent" : state === "nophone" ? "Notifications off" : state === "sending" ? "Sending…" : state === "off" ? "Reminders not switched on yet" : "Send reminder";
+    acts.push(el("button",{class:"btn btn-sm " + (state === "sent" ? "btn-done" : "btn-remind"),type:"button",disabled:!!state && state !== "err",text:state === "err" ? "Try the reminder again" : label,
+      title:state === "nophone" ? first + " hasn't turned on notifications on their phone" : "",
+      onclick:async () => {
+        remState[id] = "sending"; renderFeed();
+        try{
+          const out = await SC.post("sc_notify", {kind:"reminder", session_id:s.session_id, slug:p.slug});
+          remState[id] = out.phones ? "sent" : "nophone";
+          if(out.phones) remember(k, "sent");
+        }catch(e){ remState[id] = /unknown S&C request/i.test(e.message) ? "off" : "err"; console.error(e); }
+        renderFeed();
+      }}));
+  }
+  if(acts.length) kids.push(el("div",{class:"fc-actions"}, acts));
+  return el("article",{class:"fc" + (c.look ? " look" : ""),"aria-label":p.name + ", " + BADGE[1]}, kids);
+}
+
+function chartPlayer(slug){
+  player = slug; $("sel-player").value = slug; renderProgression();
+  $("prog-sec").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 /* ---------- progression ---------- */
@@ -445,7 +809,7 @@ function renderParticipation(){
   const table = el("table",{class:"part"},[
     el("thead",{},[ el("tr",{},[ el("th",{text:"Player"}) ].concat(wk.map(s => el("th",{text:dayLabel(s.date) + " · " + s.name})), [ el("th",{text:"4-week rate"}) ])) ]),
     el("tbody",{}, rows.map(x => el("tr",{},[
-      el("td",{},[ el("button",{class:"pl",type:"button",onclick:() => { player = x.p.slug; $("sel-player").value = player; renderProgression(); $("prog-sec").scrollIntoView({behavior:"smooth",block:"start"}); }},[
+      el("td",{},[ el("button",{class:"pl",type:"button",onclick:() => chartPlayer(x.p.slug)},[
         SC.avatar(x.p), el("span",{},[ el("div",{style:"font-weight:600",text:x.p.name}), el("div",{class:"stat-s",text:x.p.pos}) ]) ]) ])
     ].concat(wk.map(s => { const st = statusFor(s, x.p.slug); return el("td",{},[ el("span",{class:"chipst st-" + st,text:ST[st]}) ]); }),
       [ el("td",{},[ x.r ? el("span",{class:"rate " + (x.r.hit / x.r.n >= 0.9 ? "t-good" : x.r.hit / x.r.n >= 0.75 ? "t-watch" : "t-bad"),text:Math.round(100 * x.r.hit / x.r.n) + "%"})
@@ -463,7 +827,9 @@ function renderParticipation(){
       el("span",{text:"No S&C sessions have been set up in the hub yet. Build and publish the first one to start filling this page."}),
       el("a",{class:"btn btn-sm btn-primary",href:"sc-sessions.html",text:"Plan sessions"}) ]));
     const attention = buildAttention();
-    renderKPIs(attention); renderWeek(); renderAttention(attention);
+    renderKPIs(attention); renderFeed(); renderWeek(); renderAttention(attention);
+    $("day-prev").onclick = () => { feedDay = SC.addDaysISO(feedDay, -1); feedFilter = "all"; feedAll = false; renderFeed(); };
+    $("day-next").onclick = () => { if(feedDay < today){ feedDay = SC.addDaysISO(feedDay, 1); feedFilter = "all"; feedAll = false; renderFeed(); } };
     setupProgression(); renderProgression(); renderParticipation();
   }catch(e){
     console.error(e);

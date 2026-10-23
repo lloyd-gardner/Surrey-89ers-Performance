@@ -36,8 +36,45 @@ body.focus .main{max-width:1440px;margin:0 auto}
 .steps .on{color:var(--offwhite);font-weight:700}
 .steps .on .num,.steps .done .num{background:var(--green);border-color:var(--green);color:#fff}
 .steps .bar{width:28px;height:1px;background:var(--field-border)}
-.save-state{font-size:12.5px;color:var(--offwhite-mid)}
-.save-state.dirty{color:var(--amber)}
+.save-state{font-size:12.5px;color:var(--offwhite-mid);display:inline-flex;align-items:center;gap:6px}
+.save-state.ok{color:var(--green-text)}
+.save-state.dirty{color:var(--amber);font-weight:600}
+.details .field.w-rpe{width:150px}
+.pub-err{font-size:12.5px;color:#f0a0a0;font-weight:600;line-height:1.45;padding:10px 12px;border-radius:8px;border:1px solid rgba(224,85,85,0.4);background:rgba(224,85,85,0.1)}
+
+/* ---- published ---- */
+.crumbs{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--offwhite-mid);margin:-6px 0 22px}
+.crumbs a{color:var(--offwhite-mid);text-decoration:none}.crumbs a:hover{color:var(--offwhite)}
+.crumbs .here{color:var(--offwhite);font-weight:600}
+.pub{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-bottom:16px}
+.pub-hero{display:flex;gap:16px;align-items:center}
+.pub-ic{width:52px;height:52px;flex:none;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700}
+.pub-ic.undone{background:var(--card2);color:var(--offwhite-mid);border:1px solid var(--field-border)}
+.pub-title{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;letter-spacing:-.3px}
+.pub-sub{font-size:13.5px;color:var(--offwhite-mid);margin-top:2px}
+.checklist{list-style:none;display:flex;flex-direction:column}
+.checklist li{display:flex;gap:12px;align-items:flex-start;padding:13px 18px;border-top:1px solid var(--border-soft)}
+.checklist li:first-child{border-top:0}
+.ck{width:24px;height:24px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px}
+.ck.ok{background:var(--green-dim);color:var(--green-text);border:1px solid var(--green)}
+.ck.warn{background:rgba(245,158,11,0.12);color:var(--amber);border:1px solid rgba(245,158,11,0.4)}
+.ck.wait{border:1px dashed var(--field-border);color:var(--offwhite-mid)}
+.ck-t{font-weight:600}
+.ck-s{font-size:12.5px;color:var(--offwhite-mid);margin-top:2px;line-height:1.45}
+.novid{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px 18px;border-radius:12px;border:1px solid rgba(245,158,11,0.35);background:rgba(245,158,11,0.07)}
+.novid-t{font-weight:700;color:#f6c56b}
+.novid-s{font-size:12.5px;color:var(--offwhite-mid);margin-top:2px}
+.next{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.next-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:64px;padding:12px 16px;border-radius:10px;border:1px solid var(--field-border);background:var(--card);color:var(--offwhite);text-align:left;cursor:pointer;text-decoration:none;font:inherit}
+.next-btn:hover{border-color:var(--border);background:var(--card2)}
+.next-btn b{font-weight:700;font-size:14px}
+.next-btn span{font-size:12px;color:var(--offwhite-mid)}
+.next-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.next-btn.primary span{color:rgba(255,255,255,0.8)}
+.next-btn.primary:hover{background:var(--green-dark)}
+.change-line{font-size:13px;color:var(--offwhite-mid)}
+.undo-bar{position:sticky;bottom:16px;align-self:center;margin-top:8px;z-index:20;display:flex;align-items:center;gap:14px;padding:10px 12px 10px 16px;border-radius:12px;background:#0b1a11;border:1px solid var(--border);box-shadow:0 14px 34px rgba(0,0,0,.5);font-size:13.5px;max-width:calc(100vw - 32px)}
+.undo-bar .ck{margin:0}
 
 /* ---- build ---- */
 .name-label{font-size:11px;letter-spacing:2px;color:var(--offwhite-mid);font-weight:700;display:block;margin-bottom:6px}
@@ -114,6 +151,9 @@ body.focus .main{max-width:1440px;margin:0 auto}
   .lib-list{max-height:260px}
 }
 @media (max-width:560px){
+  .next{grid-template-columns:1fr}
+  .pub-title{font-size:20px}
+  .stepbar-right{width:100%}
   .name-input{font-size:21px}
   .details .field{width:100% !important}
   .xthumb{width:100%;height:auto;aspect-ratio:16/9}
@@ -147,12 +187,15 @@ const RULES = [["same","Keep the same"],["kg","+2.5 kg each week"],["pct","+5% e
 const GROUPS = [["G","Guards"],["F","Forwards"],["B","Bigs"]];
 
 let LIBRARY = [], LIB_BY_ID = {}, SESSIONS = [], ROWS = {}, ROSTER = [], LIVE = false;
+let HAS_RPE = false;                 // does SESSIONS have its planned_rpe column yet?
 let view = "list";
 let S = null;                        // the session being edited
 let dirty = false, savedAt = "";
 let q = "", cat = "All";
 let showAllPast = false;
 let notice = null;                   // {kind, text} shown once at the top
+let pubErr = "";                     // why the last publish failed, shown beside the button
+let PUB = null;                      // the last publish, for the confirmation page and Undo
 
 /* ---------- data ---------- */
 
@@ -162,6 +205,7 @@ async function loadAll(){
     SC.loadRoster().catch(e => { console.error(e); return []; }), SC.saveIsLive()
   ]);
   LIVE = live; ROSTER = roster;
+  HAS_RPE = (ses.head || []).indexOf("planned_rpe") >= 0;
   LIBRARY = ex.rows.filter(x => !SC.isTrue(x.archived)).sort((a,b) => a.name.localeCompare(b.name,"en",{sensitivity:"base"}));
   LIB_BY_ID = {}; ex.rows.forEach(x => LIB_BY_ID[x.exercise_id] = x);
   SESSIONS = ses.rows.filter(s => !SC.isTrue(s.archived));
@@ -202,14 +246,14 @@ function rowToSave(r){
 function blankSession(){
   return { session_id:"", name:"", date:"", start_time:"", location:SC.LOCATIONS[0], phase:"",
     status:"draft", assign_mode:"squad", groups:{G:true,F:true,B:true}, picked:{}, series_id:"",
-    rows:[], repeat:false, until:"", rule:"same" };
+    planned_rpe:"", updated_at:"", rows:[], repeat:false, until:"", rule:"same" };
 }
 function sessionFromSaved(s, asNew){
   const out = blankSession();
   Object.assign(out, { session_id:asNew ? "" : s.session_id, name:s.name, date:asNew ? "" : s.date,
     start_time:asNew ? "" : s.start_time, location:s.location || SC.LOCATIONS[0], phase:s.phase,
     status:asNew ? "draft" : s.status, assign_mode:asNew ? "squad" : (s.assign_mode || "squad"),
-    series_id:asNew ? "" : s.series_id });
+    series_id:asNew ? "" : s.series_id, planned_rpe:s.planned_rpe || "", updated_at:asNew ? "" : s.updated_at });
   out.rows = (ROWS[s.session_id] || []).map(rowFromSaved);
   const saved = (s.players || "").split(",").filter(Boolean);
   if(!asNew && saved.length){
@@ -268,7 +312,7 @@ function progressed(r, k){
 function payloadFor(status, date, k, id){
   return { session_id:id, name:S.name.trim(), date:date, start_time:S.start_time, location:S.location,
     phase:S.phase.trim(), status:status, assign_mode:S.assign_mode, players:selectedSlugs(),
-    est_min:totals().est, series_id:S.series_id, archived:false,
+    est_min:totals().est, series_id:S.series_id, planned_rpe:S.planned_rpe, archived:false,
     exercises:S.rows.map(r => Object.assign(rowToSave(r), { load:r.load_type === "bw" ? "" : progressed(r, k) })) };
 }
 
@@ -285,36 +329,85 @@ function problems(status){
   return "";
 }
 
-async function save(status, btn){
+/* Saves the session (one per week if it repeats). Returns the
+   endpoint's answer, or null if it did not save. On failure nothing
+   the coach entered is touched. */
+async function save(status, btn, opts){
+  opts = opts || {};
   const msg = problems(status);
-  if(msg){ flash("err", msg); return false; }
+  if(msg){ if(status === "published"){ pubErr = msg; render(); } else flash("err", msg); return null; }
+  const wasPublished = S.status === "published" && !!S.session_id;
+  const before = wasPublished ? SESSIONS.find(x => x.session_id === S.session_id) : null;
+  const beforeRows = before ? (ROWS[before.session_id] || []).slice() : [];
   const dates = status === "template" ? [""] : (S.repeat ? repeatDates() : [S.date]);
   if(dates.length > 1 && !S.series_id) S.series_id = "se_" + uid();
   const list = dates.map((d, k) => {
     const st = (k > 0 && S.rule === "hand" && status === "published") ? "draft" : status;
     return payloadFor(st, d, k, k === 0 && status !== "template" ? S.session_id : "");
   });
-  const label = btn.textContent; btn.disabled = true; btn.textContent = "Saving…";
+  const label = btn ? btn.textContent : "";
+  if(btn){ btn.disabled = true; btn.textContent = status === "published" ? "Publishing…" : "Saving…"; }
+  pubErr = "";
+  let out;
   try{
-    const out = await SC.post("sc_sessions_save", {sessions:list});
-    await loadAll();
-    if(status === "template"){
-      flash("ok", "Saved as a template. It is in the Templates list.");
-    }else{
-      S.session_id = out.session_ids[0]; S.status = status; S.repeat = false;
-      dirty = false; savedAt = new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
-      const n = selectedSlugs().length, extra = dates.length > 1 ? " " + dates.length + " sessions created." : "";
-      flash("ok", status === "published"
-        ? "Published to " + n + (n === 1 ? " player." : " players.") + extra + " Player portals still show the old programme until they are switched over."
-        : "Draft saved." + extra);
-    }
-    render();
-    return true;
+    out = await SC.post("sc_sessions_save", {sessions:list});
   }catch(e){
-    flash("err", "Couldn't save: " + e.message);
-    btn.disabled = false; btn.textContent = label;
-    return false;
+    if(btn){ btn.disabled = false; btn.textContent = label; }
+    if(status === "published"){ pubErr = "Couldn't publish: " + e.message + ". Nothing was lost — everything you entered is still here. Check the connection and press Publish again."; render(); }
+    else flash("err", "Couldn't save: " + e.message + ". Nothing was lost — check the connection and try again.");
+    return null;
   }
+  /* saved: re-read so the lists are current; a failed re-read is not a failed save */
+  try{ await loadAll(); }catch(e){ console.error(e); }
+  if(status === "template"){
+    flash("ok", "Saved as a template. It is in the Templates list.");
+    render();
+    return out;
+  }
+  S.session_id = out.session_ids[0]; S.status = status; S.repeat = false;
+  dirty = false; savedAt = SC.hhmm();
+  if(status === "published" && !opts.quiet && !opts.keep){
+    list.forEach((p, k) => p.session_id = out.session_ids[k]);
+    PUB = { payloads:list, ids:out.session_ids, dates:dates, savedAt:savedAt, wasPublished:wasPublished,
+      before:before ? Object.assign({}, before) : null, beforeRows:beforeRows,
+      name:S.name.trim(), date:S.date, start_time:S.start_time, location:S.location, phase:S.phase.trim(),
+      players:selectedSlugs(), mode:S.assign_mode, groups:Object.assign({}, S.groups), rule:S.rule,
+      noVid:S.rows.filter(r => !SC.isYT(r.video_url)).map(r => ({name:r.exercise, id:r.exercise_id})),
+      notify:wasPublished ? {state:"skip"} : {state:"sending"}, undone:false };
+    go("published");
+    if(!wasPublished) notifyPublished();
+    return out;
+  }
+  if(!opts.quiet){
+    const extra = dates.length > 1 ? " " + dates.length + " sessions created." : "";
+    flash("ok", (status === "published" ? "Changes saved. Players see them straight away." : "Draft saved.") + extra);
+    render();
+  }
+  return out;
+}
+
+/* Fixed wording only: the endpoint builds the message from the
+   session itself, so nothing typed here reaches a player's phone. */
+async function notifyPublished(){
+  const p = PUB;
+  try{
+    const out = await SC.post("sc_notify", {kind:"published", session_id:p.ids[0]});
+    p.notify = {state:"sent", at:SC.hhmm(), phones:out.phones || 0, reached:out.players_reached || 0, players:out.players || p.players.length};
+  }catch(e){
+    p.notify = /unknown S&C request/i.test(e.message) ? {state:"off"} : {state:"err", error:e.message};
+  }
+  if(view === "published" && PUB === p) render();
+}
+
+/* Save & exit: save what is there (as a draft, or as published if it
+   already is), then go to the S&C overview. Nothing to save: just go. */
+async function saveAndExit(btn){
+  const empty = !S.session_id && !S.name.trim() && !S.rows.length;
+  if(!dirty || empty){ dirty = false; location.href = "sc-overview.html"; return; }
+  const status = S.status === "published" ? "published" : "draft";
+  const out = await save(status, btn, {quiet:true});
+  if(out){ dirty = false; location.href = "sc-overview.html"; }
+  else if(status === "published" && pubErr){ flash("err", pubErr.replace("Couldn't publish", "Couldn't save")); pubErr = ""; render(); }
 }
 
 async function archive(s, btn){
@@ -323,14 +416,26 @@ async function archive(s, btn){
   try{
     await SC.post("sc_sessions_save", {sessions:[{ session_id:s.session_id, name:s.name, date:s.date, start_time:s.start_time,
       location:s.location, phase:s.phase, status:"draft", assign_mode:s.assign_mode, players:s.players,
-      est_min:s.est_min, series_id:s.series_id, archived:true,
+      est_min:s.est_min, series_id:s.series_id, planned_rpe:s.planned_rpe, archived:true,
       exercises:(ROWS[s.session_id] || []).map(r => Object.assign({}, r, {each_side:SC.isTrue(r.each_side)})) }]});
     await loadAll(); flash("ok", "Removed “" + s.name + "”."); render();
   }catch(e){ flash("err", "Couldn't remove it: " + e.message); render(); }
 }
 
 function flash(kind, text){ notice = {kind:kind, text:text}; banners(); window.scrollTo({top:0, behavior:"smooth"}); }
-function touch(){ dirty = true; const s = $("save-state"); if(s){ s.textContent = "Unsaved changes"; s.className = "save-state dirty"; } }
+function touch(){ dirty = true; pubErr = ""; const s = $("save-state"); if(s){ s.textContent = "Unsaved changes"; s.className = "save-state dirty"; } }
+
+/* "Draft saved 10:42" beside Save & exit */
+function saveStateText(){
+  if(dirty) return ["dirty", "Unsaved changes"];
+  const pre = S.status === "published" ? "Saved " : "Draft saved ";
+  if(savedAt) return ["ok", "✓ " + pre + savedAt];
+  if(S.session_id && S.updated_at){
+    const day = S.updated_at.slice(0, 10), t = S.updated_at.slice(11, 16);
+    return ["", pre + (day === SC.todayISO() ? t : SC.prettyDate(day) + (t ? " " + t : ""))];
+  }
+  return ["", S.session_id ? "" : "Not saved yet"];
+}
 
 /* ---------- shared bits ---------- */
 
@@ -340,29 +445,29 @@ function banners(){
   if(notice) b.appendChild(el("div",{class:"banner " + notice.kind, role:"status", text:notice.text}));
 }
 
-function go(v){ view = v; notice = null; render(); window.scrollTo(0,0); }
+function go(v){ view = v; notice = null; if(v !== "published") clearUndoBar(); render(); window.scrollTo(0,0); }
 function leaveToList(){
   if(dirty && !confirm("This session has unsaved changes. Leave without saving?")) return;
   S = null; dirty = false; savedAt = ""; go("list");
 }
 
 function render(){
-  document.body.classList.toggle("focus", view !== "list");
+  document.body.classList.toggle("focus", view !== "list" && view !== "published");
   banners();
   const v = $("view"); v.textContent = "";
   if(view === "list") renderList(v);
   else if(view === "build") renderBuild(v);
+  else if(view === "published") renderPublished(v);
   else renderAssign(v);
 }
 
 function stepbar(step){
-  const state = dirty ? "Unsaved changes" : (savedAt ? "Saved " + savedAt : (S.session_id ? "" : "Not saved yet"));
-  const right = [ el("span",{id:"save-state",class:"save-state" + (dirty ? " dirty" : ""),text:state}) ];
-  if(step === 1){
-    right.push(el("button",{class:"btn",type:"button",disabled:!LIVE,text:S.status === "published" ? "Save changes" : "Save draft",
-      onclick:e => save(S.status === "published" ? "published" : "draft", e.currentTarget)}));
-    right.push(el("button",{class:"btn btn-primary",type:"button",text:"Next: Assign →",onclick:()=>go("assign")}));
-  }
+  const st = saveStateText();
+  const right = [
+    el("span",{id:"save-state",class:"save-state" + (st[0] ? " " + st[0] : ""),role:"status",text:st[1]}),
+    el("button",{class:"btn",type:"button",disabled:!LIVE && dirty,text:"Save & exit",onclick:e => saveAndExit(e.currentTarget)})
+  ];
+  if(step === 1) right.push(el("button",{class:"btn btn-primary",type:"button",text:"Next: Assign →",onclick:()=>go("assign")}));
   return el("div",{class:"stepbar"},[
     el("div",{class:"stepbar-left"},[
       step === 1 ? el("button",{class:"btn",type:"button",text:"← Sessions",onclick:leaveToList})
@@ -473,6 +578,9 @@ function renderBuild(v){
       field("Phase", el("input",{class:"input",type:"text",list:"phase-list",maxlength:"80",placeholder:"e.g. Phase 3 · In-season strength",value:S.phase,
         oninput:e => { S.phase = e.target.value; touch(); }}), "w-phase"),
       el("datalist",{id:"phase-list"}, phases.map(p => el("option",{value:p}))),
+      !HAS_RPE ? null : field("Planned RPE", (() => { const r = el("select",{class:"select",onchange:e => { S.planned_rpe = e.target.value; touch(); }},
+        [el("option",{value:"",text:"Not set"})].concat([1,2,3,4,5,6,7,8,9,10].map(n => el("option",{value:String(n),text:n + " / 10"}))));
+        r.value = S.planned_rpe || ""; return r; })(), "w-rpe"),
       el("div",{class:"field"},[ el("span",{class:"lbl",text:"Estimated length"}), el("span",{class:"est",id:"est",text:""}) ])
     ])
   ]));
@@ -601,6 +709,8 @@ function renderRows(){
     el("span",{id:"summary"}),
     el("div",{class:"btns"},[
       el("button",{class:"btn",type:"button",disabled:!LIVE,text:"Save as template",onclick:e => save("template", e.currentTarget)}),
+      el("button",{class:"btn",type:"button",disabled:!LIVE,text:S.status === "published" ? "Save changes" : "Save draft",
+        onclick:e => save(S.status === "published" ? "published" : "draft", e.currentTarget, {quiet:false, keep:true})}),
       el("button",{class:"btn btn-primary",type:"button",text:"Next: Assign →",onclick:()=>go("assign")})
     ])
   ]));
@@ -617,6 +727,175 @@ function updateDerived(){
     el("span",{style:"font-weight:600;color:" + (missing === 0 && t.count ? "var(--green-text)" : "var(--amber)"),
       text:!t.count ? "no exercises yet" : (missing === 0 ? "all videos attached" : t.vids + " of " + t.count + " videos attached")})
   ].forEach(n => s.appendChild(typeof n === "string" ? document.createTextNode(n) : n));
+}
+
+/* ---------- published ---------- */
+
+const PORTAL = "https://surrey-89ers-players.vercel.app/";
+const GROUP_NAMES = {G:"Guards", F:"Forwards", B:"Bigs"};
+
+function andList(xs){ return xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]; }
+/* "Wed 14, 21 and 28 Oct" — days run together within a month */
+function datesText(dates){
+  const byMonth = [];
+  dates.forEach(iso => {
+    const d = SC.parseDate(iso); if(!d) return;
+    const m = d.toLocaleDateString("en-GB",{month:"short"}), last = byMonth[byMonth.length - 1];
+    if(last && last.m === m) last.days.push(d.getDate()); else byMonth.push({m:m, days:[d.getDate()], wd:d.toLocaleDateString("en-GB",{weekday:"short"})});
+  });
+  const sameWd = dates.every(iso => SC.parseDate(iso) && SC.parseDate(iso).getDay() === SC.parseDate(dates[0]).getDay());
+  return (sameWd && byMonth.length ? byMonth[0].wd + " " : "") + byMonth.map(b => andList(b.days.map(String)) + " " + b.m).join(", ");
+}
+
+function whoText(p){
+  const people = ROSTER.filter(x => p.players.indexOf(x.slug) >= 0);
+  if(p.mode === "squad") return "The whole squad";
+  if(p.mode === "groups") return andList(Object.keys(p.groups).filter(g => p.groups[g]).map(g => GROUP_NAMES[g]));
+  const names = people.map(x => x.name);
+  return names.length > 6 ? names.slice(0, 5).join(", ") + " and " + (names.length - 5) + " more" : andList(names);
+}
+
+function checkItem(kind, title, sub, extra){
+  return el("li",{},[
+    el("span",{class:"ck " + kind,"aria-hidden":"true",text:kind === "ok" ? "✓" : kind === "warn" ? "!" : "…"}),
+    el("div",{style:"flex:1;min-width:0"},[ el("div",{class:"ck-t",text:title}), sub ? el("div",{class:"ck-s"},[sub].concat(extra || [])) : null ])
+  ]);
+}
+
+function notifyItem(p){
+  const n = p.notify, total = p.players.length;
+  if(n.state === "skip") return checkItem("ok","No new notification","This session was already published, so players weren't notified again. They see your changes straight away.");
+  if(n.state === "sending") return checkItem("wait","Notifying players…","");
+  if(n.state === "sent"){
+    const missing = Math.max(0, total - n.reached);
+    return checkItem("ok","Players notified",
+      "Sent " + n.at + " to " + n.phones + (n.phones === 1 ? " phone" : " phones") + "." +
+      (missing ? " " + missing + " of " + total + " players haven't turned on notifications, so it's only on their Strength & Conditioning tab." : " It's on their Strength & Conditioning tab now."));
+  }
+  if(n.state === "off") return checkItem("warn","Players not notified","Notifications from the hub aren't switched on yet. The session is on each player's Strength & Conditioning tab now.");
+  return checkItem("warn","Players not notified","Couldn't send: " + n.error + ". The session is on their Strength & Conditioning tab now. ",
+    [ el("button",{class:"btn btn-sm",type:"button",text:"Try again",onclick:()=>{ p.notify = {state:"sending"}; render(); notifyPublished(); }}) ]);
+}
+
+function renderPublished(v){
+  const p = PUB;
+  if(!p){ go("list"); return; }
+  const first = p.payloads[0];
+  v.appendChild(el("nav",{class:"crumbs","aria-label":"Breadcrumb"},[
+    el("a",{href:"sc-overview.html",text:"S&C overview"}), el("span",{"aria-hidden":"true",text:"/"}),
+    el("a",{href:"sc-sessions.html",text:"Sessions",onclick:e => { e.preventDefault(); go("list"); }}), el("span",{"aria-hidden":"true",text:"/"}),
+    el("span",{class:"here",text:p.name})
+  ]));
+  const when = [p.name, p.date ? SC.prettyDate(p.date) : "", p.start_time, p.location].filter(Boolean).join(" · ");
+  const wrap = el("div",{class:"pub"});
+  v.appendChild(wrap);
+
+  if(p.undone){
+    wrap.appendChild(el("div",{class:"pub-hero"},[ el("span",{class:"pub-ic undone","aria-hidden":"true",text:"↶"}),
+      el("div",{},[ el("h1",{class:"pub-title",text:p.wasPublished ? "Changes undone" : "Publish undone"}),
+        el("div",{class:"pub-sub",text:p.wasPublished
+          ? p.name + " is back as it was before. Players see that version."
+          : p.name + " is a draft again. Players can't see it" + (p.dates.length > 1 ? ", and the other " + (p.dates.length - 1) + " weekly sessions were removed." : ".") +
+            (p.notify.state === "sent" ? " The notification already sent can't be taken back." : " Nobody was notified.")}) ]) ]));
+    wrap.appendChild(el("div",{class:"next"},[
+      el("button",{class:"next-btn primary",type:"button",onclick:()=>{ PUB = null; go(p.wasPublished ? "build" : "assign"); }},
+        [ el("b",{text:p.wasPublished ? "Back to the session" : "Back to assign"}), el("span",{text:p.wasPublished ? "Open it in the builder" : "Change who's doing it, then publish again"}) ]),
+      el("a",{class:"next-btn",href:"sc-overview.html"},[ el("b",{text:"Back to S&C overview"}), el("span",{text:"Today, the session feed and participation"}) ])
+    ]));
+    return;
+  }
+
+  wrap.appendChild(el("div",{class:"pub-hero"},[ el("span",{class:"pub-ic","aria-hidden":"true",text:"✓"}),
+    el("div",{},[ el("h1",{class:"pub-title",text:p.wasPublished ? "Session updated" : "Session published"}), el("div",{class:"pub-sub",text:when}) ]) ]));
+
+  const handDrafts = p.rule === "hand" ? p.dates.length - 1 : 0;
+  const list = el("ul",{class:"checklist"},[
+    checkItem("ok","Assigned to " + p.players.length + (p.players.length === 1 ? " player" : " players"), whoText(p) + "."),
+    checkItem("ok", p.dates.length === 1 ? "1 session added to the planner" : p.dates.length + " sessions added to the planner",
+      datesText(p.dates) + (p.phase ? " · " + p.phase : "") + (handDrafts ? ". The first is published; the other " + handDrafts + " are drafts for you to set by hand." : "")),
+    notifyItem(p),
+    checkItem("ok","Saved to the Strength Program sheet","Saved " + p.savedAt + " · ",
+      [ el("a",{href:SC.STRENGTH_SHEET_URL,target:"_blank",rel:"noopener",text:"Open the sheet ↗"}) ])
+  ]);
+  wrap.appendChild(el("section",{class:"card","aria-labelledby":"wjh"},[
+    el("div",{style:"padding:14px 18px 6px"},[ el("h2",{class:"card-title",id:"wjh",text:"What just happened"}) ]), list ]));
+
+  if(p.noVid.length){
+    const one = p.noVid.length === 1;
+    wrap.appendChild(el("div",{class:"novid",role:"note"},[
+      el("div",{},[ el("div",{class:"novid-t",text:one ? p.noVid[0].name + " has no video" : p.noVid.length + " exercises have no video: " + andList(p.noVid.map(x => x.name))}),
+        el("div",{class:"novid-s",text:"Players will only see the name and cues until you add one."}) ]),
+      el("a",{class:"btn btn-sm",href:"sc-library.html" + (one && p.noVid[0].id ? "?edit=" + encodeURIComponent(p.noVid[0].id) : "?missing=1"),text:one ? "Add video" : "Add videos"})
+    ]));
+  }
+
+  const firstPlayer = ROSTER.find(x => p.players.indexOf(x.slug) >= 0);
+  wrap.appendChild(el("h2",{class:"card-title",text:"What next?"}));
+  wrap.appendChild(el("div",{class:"next"},[
+    el("a",{class:"next-btn primary",href:"sc-overview.html"},[ el("b",{text:"Back to S&C overview"}), el("span",{text:"See who's done today's session"}) ]),
+    el("button",{class:"next-btn",type:"button",onclick:()=>go("list")},[ el("b",{text:"View in planner"}), el("span",{text:"All sessions, by date"}) ]),
+    el("button",{class:"next-btn",type:"button",onclick:()=>{ S = blankSession(); dirty = false; savedAt = ""; PUB = null; go("build"); }},
+      [ el("b",{text:"Create another session"}), el("span",{text:"Start blank, or use a template from the list"}) ]),
+    firstPlayer ? el("a",{class:"next-btn",href:PORTAL + firstPlayer.slug,target:"_blank",rel:"noopener"},
+      [ el("b",{text:"Preview as player ↗"}), el("span",{text:"What " + firstPlayer.name.split(" ")[0] + " will see. Anything you tap there saves as them."}) ]) : null
+  ]));
+  wrap.appendChild(el("div",{class:"change-line"},[ "Need to change something? ",
+    el("a",{href:"#",text:"Edit the session",onclick:e => { e.preventDefault(); const s = SESSIONS.find(x => x.session_id === p.ids[0]);
+      if(s){ S = sessionFromSaved(s, false); dirty = false; savedAt = ""; PUB = null; go("build"); } }}),
+    " — players see your changes straight away." ]));
+
+  showUndoBar(p, wrap);
+}
+
+let undoBar = null;
+function clearUndoBar(){ if(undoBar){ undoBar.remove(); undoBar = null; } }
+function showUndoBar(p, wrap){
+  clearUndoBar();
+  undoBar = el("div",{class:"undo-bar",role:"status"},[
+    el("span",{class:"ck ok","aria-hidden":"true",text:"✓"}),
+    el("span",{text:(p.wasPublished ? "Saved for " : "Published to ") + p.players.length + (p.players.length === 1 ? " player" : " players")}),
+    el("button",{class:"btn btn-sm",type:"button",text:"Undo",onclick:e => undoPublish(p, e.currentTarget)})
+  ]);
+  wrap.appendChild(undoBar);
+}
+
+/* Undo a new publish: the first session goes back to a draft with no
+   players, extra weekly sessions are removed (archived). Undo an edit
+   of a session that was already published: the earlier version goes
+   back. Logged sets stay on STRENGTH LOG whatever happens. */
+async function undoPublish(p, btn){
+  let loggedBy = 0;
+  try{
+    const log = await SC.loadSessionLog();
+    loggedBy = new Set(log.filter(r => p.ids.indexOf(r.block) >= 0).map(r => r.slug)).size;
+  }catch(e){ console.error(e); }
+  if(loggedBy && !confirm(loggedBy + (loggedBy === 1 ? " player has" : " players have") + " already logged sets against this session. Undo anyway? Their sets stay on the sheet, but the session leaves their portal.")) return;
+  let list;
+  if(p.wasPublished && p.before){
+    const b = p.before;
+    list = [{ session_id:b.session_id, name:b.name, date:b.date, start_time:b.start_time, location:b.location, phase:b.phase,
+      status:b.status, assign_mode:b.assign_mode, players:b.players, est_min:b.est_min, series_id:b.series_id,
+      planned_rpe:b.planned_rpe, archived:false,
+      exercises:p.beforeRows.map(r => Object.assign({}, r, {each_side:SC.isTrue(r.each_side)})) }];
+  }else{
+    list = p.payloads.map((x, k) => Object.assign({}, x, k === 0 ? {status:"draft", players:[]} : {status:"draft", archived:true}));
+  }
+  btn.disabled = true; btn.textContent = "Undoing…";
+  try{
+    await SC.post("sc_sessions_save", {sessions:list});
+  }catch(e){
+    btn.disabled = false; btn.textContent = "Undo";
+    flash("err", "Couldn't undo: " + e.message + ". The session is still published.");
+    return;
+  }
+  try{ await loadAll(); }catch(e){ console.error(e); }
+  p.undone = true; clearUndoBar();
+  const s = SESSIONS.find(x => x.session_id === p.ids[0]);
+  if(s){ S = sessionFromSaved(s, false); S.rule = p.rule; if(p.mode === "groups") S.groups = Object.assign({}, p.groups); }
+  /* even if the re-read lags behind the save, the builder must not think it is still published */
+  if(!p.wasPublished){ S.status = "draft"; S.session_id = p.ids[0]; S.repeat = false; }
+  dirty = false; savedAt = SC.hhmm();
+  render(); window.scrollTo(0,0);
 }
 
 /* ---------- assign ---------- */
@@ -710,11 +989,12 @@ function renderAssign(v){
       el("div",{},[ el("dt",{text:"Sessions created"}), el("dd",{text:String(Math.max(dates.length, 1))}) ])
     ]),
     noVid.length ? el("div",{class:"hint warn",text:noVid.length === 1 ? noVid[0].exercise + " has no video." : noVid.length + " exercises have no video."}) : null,
+    pubErr ? el("div",{class:"pub-err",role:"alert",text:pubErr}) : null,
     el("button",{class:"btn btn-primary",type:"button",disabled:!LIVE,
-      text:"Publish to " + slugs.length + (slugs.length === 1 ? " player" : " players"),onclick:e => save("published", e.currentTarget)}),
+      text:(S.status === "published" ? "Save and keep published · " : "Publish to ") + slugs.length + (slugs.length === 1 ? " player" : " players"),onclick:e => save("published", e.currentTarget)}),
     el("button",{class:"btn",type:"button",disabled:!LIVE,text:S.status === "published" ? "Unpublish and keep as draft" : "Save as draft",
       onclick:e => save("draft", e.currentTarget)}),
-    el("span",{class:"hint",text:"Publishing saves the session as published on the Strength Program sheet. Player portals still show the old programme until they are switched over to these sessions."})
+    el("span",{class:"hint",text:"Publishing saves the session to the Strength Program sheet. It appears on each assigned player's Strength & Conditioning tab straight away."})
   ]);
 
   v.appendChild(el("div",{class:"assign"},[ el("div",{class:"assign-main"},[ playersSec, repeatSec ]), side ]));
@@ -724,7 +1004,14 @@ window.addEventListener("beforeunload", e => { if(dirty){ e.preventDefault(); e.
 
 (async function(){
   $("view").appendChild(el("div",{class:"empty",text:"Loading sessions…"}));
-  try{ await loadAll(); render(); }
+  try{
+    await loadAll();
+    const add = new URLSearchParams(location.search).get("add");
+    const x = add && LIBRARY.find(l => l.exercise_id === add);
+    if(x){ S = blankSession(); S.rows.push(rowFromLibrary(x, "A")); dirty = true; savedAt = ""; view = "build";
+      history.replaceState(null, "", location.pathname); }
+    render();
+  }
   catch(e){ $("view").textContent = ""; $("banners").appendChild(el("div",{class:"banner err",text:"Couldn't load sessions: " + e.message})); }
 })();
 })();

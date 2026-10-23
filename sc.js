@@ -32,9 +32,11 @@
     "EXERCISES": ["exercise_id","name","type","tags","measure","sets","amount","each_side",
                   "load_type","load","rest_s","video_url","cues","archived","updated_at"],
     "SESSIONS": ["session_id","name","date","start_time","location","phase","status",
-                 "assign_mode","players","est_min","series_id","archived","updated_at"],
+                 "assign_mode","players","est_min","series_id","archived","updated_at","planned_rpe"],
     "SESSION EXERCISES": ["session_id","order","block","code","exercise_id","exercise","measure",
-                          "sets","amount","each_side","load_type","load","rest_s","video_url","cues"]
+                          "sets","amount","each_side","load_type","load","rest_s","video_url","cues"],
+    /* coach comments on a player's session, written by SCFeed.gs */
+    "COMMENTS": ["comment_id","session_id","slug","comment","created_at","archived"]
   };
 
   /* A full CSV reader: quoted cells may hold commas, quotes and line breaks. */
@@ -73,7 +75,7 @@
     for (var i = 0; i < raw.length && i < 5; i++) {
       if (raw[i].some(function (c) { return c.trim().toLowerCase() === cols[0]; })) { h = i; break; }
     }
-    if (h < 0) return { setUp: false, rows: [] };
+    if (h < 0) return { setUp: false, rows: [], head: [] };
     var head = raw[h].map(function (c) { return c.trim().toLowerCase(); });
     var at = {};
     cols.forEach(function (k, n) { var f = head.indexOf(k); at[k] = f >= 0 ? f : n; });
@@ -82,7 +84,7 @@
       cols.forEach(function (k) { o[k] = (r[at[k]] === undefined ? "" : String(r[at[k]])).trim(); });
       return o;
     }).filter(function (o) { return o[cols[0]]; });
-    return { setUp: true, rows: rows };
+    return { setUp: true, rows: rows, head: head };
   }
 
   async function post(type, payload) {
@@ -289,6 +291,55 @@
     });
   }
 
+  /* --- S&C sessions as players log them (portal, since 15 Oct) ---
+     STRENGTH LOG rows with mode "session": block = session_id, code,
+     sets = the set's line number, reps, weights_kg, note = Left/Right.
+     A row with code "SESSION" is the player's rating: rpe 1-10, note =
+     their tags then " — " then their own words. */
+  async function loadSessionLog() {
+    var rows = await readLog("STRENGTH LOG", STRENGTH_COLS);
+    return rows.filter(function (r) { return r.mode === "session" && r.block; })
+      .map(function (r) { r.ts = parseTs(r.timestamp); return r; });
+  }
+
+  /* Timestamps come back as "2026-10-16 18:02:11", "16/10/2026 18:02:11"
+     or an ISO string, depending on how the cell was written. */
+  function parseTs(s) {
+    s = String(s || "").trim();
+    var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime();
+    m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(s);
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +(m[6] || 0)).getTime();
+    var t = Date.parse(s);
+    return isNaN(t) ? null : t;
+  }
+
+  var FEEDBACK_TAGS = ["Felt great", "Low energy", "Legs heavy", "Tight somewhere", "Pain — talk to me"];
+  /* "Felt great · Legs heavy — still sore" -> { tags:[...], text:"still sore" } */
+  function parseFeedback(note) {
+    note = String(note || "").trim();
+    /* "Pain — talk to me" holds the separator itself, so set it aside first */
+    var probe = note.replace("Pain — talk to me", "Pain_talk"), pc = probe.indexOf(" — ");
+    var head = pc >= 0 ? probe.slice(0, pc) : probe;
+    var parts = head.split(" · ").map(function (t) { return t.trim() === "Pain_talk" ? "Pain — talk to me" : t.trim(); });
+    if (head && parts.every(function (t) { return FEEDBACK_TAGS.indexOf(t) >= 0; })) {
+      return { tags: parts, text: pc >= 0 ? probe.slice(pc + 3).replace("Pain_talk", "Pain — talk to me").trim() : "" };
+    }
+    return { tags: [], text: note };
+  }
+
+  /* Readiness = the average of the six check-in scores (1-5, 5 good),
+     from the player's latest check-in that day. -> { slug: { date: n } } */
+  async function loadReadiness() {
+    var rows = await readLog("WELLNESS LOG", WELLNESS_COLS), out = {};
+    rows.forEach(function (r) {
+      var vals = METRICS.map(function (m) { return parseFloat(r[m[0]]); }).filter(function (v) { return !isNaN(v) && v > 0; });
+      if (!vals.length) return;
+      (out[r.slug] = out[r.slug] || {})[r.date] = mean(vals);
+    });
+    return out;
+  }
+
   function avatar(p, cls) {
     var box = el("div", { class: cls || "av" }, [initials(p.name)]);
     if (p.slug) {
@@ -367,22 +418,53 @@
     return d.toLocaleDateString("en-GB", o);
   }
 
+  function hhmm(d) { return (d || new Date()).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); }
+
+  /* One confirmation at a time, bottom right. Hides itself after `ms`
+     (6 s by default) unless the pointer is over it; ✕ closes it.
+     opts: { title, sub, actions: [{ label, primary, onclick }], ms } */
+  var toastBox = null, toastTimer = null;
+  function hideToast() { clearTimeout(toastTimer); if (toastBox) { toastBox.remove(); toastBox = null; } }
+  function toast(opts) {
+    hideToast();
+    var acts = (opts.actions || []).map(function (a) {
+      return el("button", { class: "btn btn-sm" + (a.primary ? " btn-primary" : ""), type: "button", text: a.label,
+        onclick: function () { hideToast(); a.onclick(); } });
+    });
+    toastBox = el("div", { class: "toast", role: "status", "aria-live": "polite" }, [
+      el("div", { class: "toast-top" }, [
+        el("span", { class: "toast-ic", "aria-hidden": "true", text: "✓" }),
+        el("div", { class: "toast-body" }, [ el("div", { class: "toast-title", text: opts.title }),
+          opts.sub ? el("div", { class: "toast-sub", text: opts.sub }) : null ]),
+        el("button", { class: "toast-x", type: "button", "aria-label": "Close", text: "✕", onclick: hideToast })
+      ]),
+      acts.length ? el("div", { class: "toast-btns" }, acts) : null
+    ]);
+    var ms = opts.ms || 6000, arm = function () { clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, ms); };
+    toastBox.addEventListener("pointerenter", function () { clearTimeout(toastTimer); });
+    toastBox.addEventListener("pointerleave", arm);
+    document.body.appendChild(toastBox);
+    arm();
+  }
+
   function logout() {
     try { sessionStorage.removeItem("89ers_auth"); } catch (e) {}
     location.href = "index.html";
   }
 
   window.SC = {
-    TYPES: ["Power", "Strength", "Iso", "Mobility"],
+    TYPES: ["Power", "Strength", "Iso", "Mobility", "Core"],
     LOCATIONS: ["Gym · Surrey Sports Park", "Arena C", "Away — hotel / travel"],
     STRENGTH_SHEET_URL: "https://docs.google.com/spreadsheets/d/" + STRENGTH_SHEET_ID + "/edit",
     parseCSV: parseCSV, readTab: readTab, post: post, saveIsLive: saveIsLive, loadRoster: loadRoster,
     isYT: isYT, ytId: ytId, ytThumb: ytThumb, prescription: prescription, loadText: loadText,
     isTrue: isTrue, estMinutes: estMinutes, el: el, parseDate: parseDate, isoDate: isoDate,
-    prettyDate: prettyDate, logout: logout,
+    prettyDate: prettyDate, logout: logout, hhmm: hhmm, toast: toast, hideToast: hideToast,
     todayISO: todayISO, addDaysISO: addDaysISO, mean: mean, nameKey: nameKey, initials: initials,
     loadPhysio: loadPhysio, loadWellnessToday: loadWellnessToday, loadACWR: loadACWR,
     loadStrengthLog: loadStrengthLog, acwrStatus: acwrStatus, avatar: avatar,
+    loadSessionLog: loadSessionLog, loadReadiness: loadReadiness, parseTs: parseTs,
+    parseFeedback: parseFeedback, FEEDBACK_TAGS: FEEDBACK_TAGS, PHOTO_BASE: PHOTO_BASE,
     PHYSIO_SHEET_EDIT: PHYSIO_SHEET_EDIT
   };
 })();

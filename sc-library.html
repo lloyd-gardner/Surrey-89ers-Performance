@@ -18,9 +18,11 @@
 
 .lib-wrap{display:flex;gap:20px;align-items:flex-start}
 .lib-grid{flex:1;min-width:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
-.ex-card{display:flex;flex-direction:column;padding:0;border-radius:12px;border:1px solid var(--border-soft);background:var(--card);color:inherit;text-align:left;overflow:hidden;cursor:pointer;transition:border-color .15s}
+.ex-card{position:relative;display:flex;flex-direction:column;padding:0;border-radius:12px;border:1px solid var(--border-soft);background:var(--card);color:inherit;text-align:left;overflow:hidden;cursor:pointer;transition:border-color .15s}
 .ex-card:hover{border-color:var(--border)}
 .ex-card[aria-pressed="true"]{border-color:var(--green-text)}
+.ex-card.just{border-color:var(--green-text);box-shadow:0 0 0 1px var(--green-text)}
+.ex-badge{position:absolute;top:8px;left:8px;z-index:2;padding:3px 9px;border-radius:999px;background:var(--green);color:#fff;font-size:11px;font-weight:700;letter-spacing:.3px}
 .ex-thumb{position:relative;width:100%;aspect-ratio:16/9;background:#050a07;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .ex-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.8}
 .ex-play{position:relative;width:38px;height:38px;border-radius:50%;background:rgba(250,249,246,0.92);display:flex;align-items:center;justify-content:center}
@@ -35,7 +37,12 @@
 
 .editor{flex:none;width:360px;position:sticky;top:76px;overflow:hidden}
 .editor-head{padding:14px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:8px}
-.editor-head h2{font-size:15px;font-weight:700}
+.editor-head h2{font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ed-status{font-size:12px;color:var(--offwhite-mid);white-space:nowrap}
+.ed-status.dirty{color:var(--amber);font-weight:700}
+.ed-status.saved{color:var(--green-text);font-weight:700}
+.input.bad{border-color:#e05555}
+#ed-save.saved{background:var(--green-dim);border-color:var(--green);color:var(--green-text);cursor:default}
 .editor-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
 .row2{display:flex;gap:10px;flex-wrap:wrap}
 .row2 > .field{flex:1;min-width:110px}
@@ -45,6 +52,9 @@
 .editor-actions{display:flex;gap:10px}
 .editor-actions .btn-primary{flex:1;min-height:44px}
 
+/* keep the confirmation clear of the edit panel's Save button */
+@media (max-width:1100px){ .toast{right:auto;left:16px} }
+@media (max-width:560px){ .toast{top:66px;bottom:auto;left:16px} }
 @media (max-width:1100px){
   .editor{position:fixed;inset:56px 0 0 auto;width:min(420px,100%);border-radius:0;border-width:0 0 0 1px;overflow-y:auto;z-index:90;box-shadow:-20px 0 40px rgba(0,0,0,.5)}
 }
@@ -81,10 +91,11 @@
       <aside class="card editor" id="editor" hidden aria-labelledby="ed-title">
         <div class="editor-head">
           <h2 id="ed-title">New exercise</h2>
-          <span class="hint" id="ed-used"></span>
+          <span class="ed-status" id="ed-used" role="status"></span>
         </div>
         <div class="editor-body">
-          <div class="field"><label for="ed-name">Name</label><input class="input" id="ed-name" type="text" maxlength="120"></div>
+          <div class="field"><label for="ed-name">Name</label><input class="input" id="ed-name" type="text" maxlength="120" aria-describedby="ed-name-err">
+            <span class="hint err" id="ed-name-err" hidden>Give the exercise a name before saving.</span></div>
           <div class="field">
             <label for="ed-video">Demo video — YouTube link</label>
             <input class="input" id="ed-video" type="url" placeholder="Paste a YouTube link" maxlength="300">
@@ -93,7 +104,7 @@
           </div>
           <div class="row2">
             <div class="field"><label for="ed-type">Type</label>
-              <select class="select" id="ed-type"><option value="">Not set</option><option>Power</option><option>Strength</option><option>Iso</option><option>Mobility</option></select></div>
+              <select class="select" id="ed-type"><option value="">Not set</option><option>Power</option><option>Strength</option><option>Iso</option><option>Mobility</option><option>Core</option></select></div>
             <div class="field"><label for="ed-measure">Measured by</label>
               <select class="select" id="ed-measure"><option value="reps">Reps</option><option value="time">Time (seconds)</option></select></div>
           </div>
@@ -135,12 +146,16 @@ const el = SC.el, $ = id => document.getElementById(id);
 
 let EXERCISES = [];                   // active library entries
 let USED = {};                        // exercise_id -> number of sessions using it
+let INHERIT = {};                     // exercise_id -> {video:n, cues:n} sessions that take video / cues from the library
 let LIVE = false;                     // has the endpoint's S&C update been deployed?
 let SET_UP = false;                   // does the EXERCISES tab exist yet?
 let LEGACY_OFFER = true;
 let cat = "All", onlyMissing = false;
 let sel = null;                       // exercise_id being edited, "new", or null
 let removeArmed = false;
+let snapshot = "";                    // the editor's values when it was opened or last saved
+let justAdded = "";                   // exercise_id saved as new in this visit: shown first, outlined
+let savedAt = "", savedId = "";       // "Saved HH:MM" in the editor header
 
 async function load(){
   const [ex, ses, rows, live] = await Promise.all([
@@ -150,12 +165,20 @@ async function load(){
   EXERCISES = ex.rows.filter(x => !SC.isTrue(x.archived))
     .sort((a,b) => a.name.localeCompare(b.name, "en", {sensitivity:"base"}));
   const liveSessions = new Set(ses.rows.filter(s => !SC.isTrue(s.archived)).map(s => s.session_id));
-  const seen = {};
+  const seen = {}, vid = {}, cue = {};
   rows.rows.forEach(r => {
     if(!r.exercise_id || !liveSessions.has(r.session_id)) return;
     (seen[r.exercise_id] = seen[r.exercise_id] || new Set()).add(r.session_id);
+    /* a session row with no video or cues of its own shows the library's */
+    if(!r.video_url) (vid[r.exercise_id] = vid[r.exercise_id] || new Set()).add(r.session_id);
+    if(!r.cues) (cue[r.exercise_id] = cue[r.exercise_id] || new Set()).add(r.session_id);
   });
-  USED = {}; Object.keys(seen).forEach(k => USED[k] = seen[k].size);
+  USED = {}; INHERIT = {};
+  Object.keys(seen).forEach(k => {
+    USED[k] = seen[k].size;
+    INHERIT[k] = { video: vid[k] ? vid[k].size : 0, cues: cue[k] ? cue[k].size : 0,
+      either: new Set([].concat(Array.from(vid[k] || []), Array.from(cue[k] || []))).size };
+  });
   LEGACY_OFFER = !ses.rows.some(s => s.status === "template");
 }
 
@@ -207,8 +230,11 @@ function render(){
   $("only-missing").checked = onlyMissing;
 
   const list = EXERCISES.filter(x =>
-    (cat === "All" || (cat === "Not set" ? !x.type : x.type === cat)) &&
-    (!onlyMissing || !SC.isYT(x.video_url)));
+    x.exercise_id === justAdded ||
+    ((cat === "All" || (cat === "Not set" ? !x.type : x.type === cat)) &&
+     (!onlyMissing || !SC.isYT(x.video_url))));
+  /* the exercise just added goes first, whatever the filter */
+  list.sort((a,b) => (b.exercise_id === justAdded) - (a.exercise_id === justAdded));
 
   const grid = $("grid"); grid.textContent = "";
   if(!EXERCISES.length){
@@ -223,8 +249,10 @@ function render(){
       ? el("span",{class:"ex-thumb"},[ SC.ytThumb(x.video_url) ? el("img",{src:SC.ytThumb(x.video_url),alt:""}) : null, el("span",{class:"ex-play"}) ])
       : el("span",{class:"ex-novid",text:"No video yet"});
     const n = USED[x.exercise_id] || 0;
-    grid.appendChild(el("button",{class:"ex-card",type:"button","aria-pressed":String(sel===x.exercise_id),
-      onclick:()=>openEditor(x.exercise_id)},[
+    const fresh = x.exercise_id === justAdded;
+    grid.appendChild(el("button",{class:"ex-card" + (fresh ? " just" : ""),type:"button","aria-pressed":String(sel===x.exercise_id),
+      onclick:()=>{ if(sel !== x.exercise_id && !leaveOK()) return; openEditor(x.exercise_id); }},[
+        fresh ? el("span",{class:"ex-badge",text:"Just added"}) : null,
         thumb,
         el("span",{class:"ex-body"},[
           el("span",{class:"ex-name",text:x.name}),
@@ -242,13 +270,14 @@ function render(){
 
 function current(){ return EXERCISES.find(x => x.exercise_id === sel) || null; }
 
+function leaveOK(){ return !isDirty() || confirm("This exercise has unsaved changes. Discard them?"); }
+
 function openEditor(id){
   sel = id; removeArmed = false;
+  if(id !== savedId) savedAt = "";
   const x = id === "new" ? {name:"",video_url:"",type:"",measure:"reps",tags:"",sets:"3",amount:"5",each_side:"FALSE",load_type:"kg",load:"",rest_s:"60",cues:""} : current();
   if(!x){ closeEditor(); return; }
   $("ed-title").textContent = id === "new" ? "New exercise" : "Edit · " + x.name;
-  const n = USED[x.exercise_id] || 0;
-  $("ed-used").textContent = id === "new" ? "" : "Used in " + n + (n===1?" session":" sessions");
   $("ed-name").value = x.name; $("ed-video").value = x.video_url;
   $("ed-type").value = SC.TYPES.indexOf(x.type) >= 0 ? x.type : "";
   $("ed-measure").value = x.measure === "time" ? "time" : "reps";
@@ -256,16 +285,39 @@ function openEditor(id){
   $("ed-side").checked = SC.isTrue(x.each_side);
   $("ed-loadtype").value = ["pct","kg","rpe","bw"].indexOf(x.load_type) >= 0 ? x.load_type : "bw";
   $("ed-load").value = x.load; $("ed-rest").value = x.rest_s; $("ed-cues").value = x.cues;
-  $("ed-msg").hidden = true;
+  $("ed-msg").hidden = true; nameError(false);
   $("ed-remove").hidden = id === "new";
   $("ed-remove").textContent = "Remove from library";
-  $("ed-save").disabled = !LIVE; $("ed-save").textContent = "Save";
   syncEditor();
+  snapshot = valuesKey();
+  updateState();
   $("editor").hidden = false;
   render();
   if(id === "new") $("ed-name").focus();
 }
-function closeEditor(){ sel = null; $("editor").hidden = true; render(); }
+function closeEditor(){ sel = null; snapshot = ""; $("editor").hidden = true; render(); }
+
+/* ---- unsaved changes and the save button's three states ---- */
+function valuesKey(){ const v = formValues(); delete v.exercise_id; return JSON.stringify(v); }
+function isDirty(){ return sel !== null && !$("editor").hidden && valuesKey() !== snapshot; }
+function updateState(){
+  const dirty = isDirty(), isNew = sel === "new", st = $("ed-used"), btn = $("ed-save");
+  const n = isNew ? 0 : (USED[sel] || 0);
+  if(isNew){ st.textContent = dirty ? "Not saved yet" : ""; st.className = "ed-status"; }
+  else if(dirty){ st.textContent = "Unsaved changes"; st.className = "ed-status dirty"; }
+  else if(savedAt && savedId === sel){ st.textContent = "Saved " + savedAt; st.className = "ed-status saved"; }
+  else { st.textContent = "Used in " + n + (n===1?" session":" sessions"); st.className = "ed-status"; }
+  const saved = !isNew && !dirty;
+  btn.textContent = isNew ? "Save exercise" : (dirty ? "Save changes" : "Saved ✓");
+  btn.classList.toggle("saved", saved);
+  btn.setAttribute("aria-disabled", String(saved));
+  btn.disabled = !LIVE;
+  $("ed-cancel").textContent = isNew || dirty ? "Cancel" : "Close";
+}
+function nameError(on){
+  $("ed-name-err").hidden = !on; $("ed-name").classList.toggle("bad", on);
+  $("ed-name").setAttribute("aria-invalid", String(on));
+}
 
 function syncEditor(){
   const v = $("ed-video").value.trim(), msg = $("ed-video-msg");
@@ -293,27 +345,75 @@ async function save(archive){
   const x = formValues();
   if(archive){ const c = current(); if(!c) return; Object.assign(x, c, {each_side:SC.isTrue(c.each_side), archived:true}); }
   else{
-    if(!x.name) return fail("Give the exercise a name.");
+    if(sel !== "new" && !isDirty()) return;          // "Saved ✓": nothing to save
+    if(!x.name){ nameError(true); $("ed-name").focus(); return; }
     if(x.video_url && !SC.isYT(x.video_url)) return fail("The video link needs to be a YouTube link, or left empty.");
   }
   const btn = archive ? $("ed-remove") : $("ed-save");
+  const wasNew = sel === "new", before = wasNew ? null : JSON.parse(snapshot);
   btn.disabled = true; btn.textContent = archive ? "Removing…" : "Saving…";
   $("ed-msg").hidden = true;
   try{
     const out = await SC.post("sc_exercise_save", {exercise:x});
     await load();
-    if(archive) closeEditor(); else openEditor(out.exercise_id);
+    if(archive){ closeEditor(); return; }
+    /* the sheet answered before the re-read caught up: show what was saved */
+    if(!EXERCISES.some(e => e.exercise_id === out.exercise_id)){
+      EXERCISES.push(Object.assign({}, x, { exercise_id:out.exercise_id, each_side:x.each_side ? "TRUE" : "FALSE", archived:"FALSE" }));
+      EXERCISES.sort((a,b) => a.name.localeCompare(b.name, "en", {sensitivity:"base"}));
+    }
+    savedId = out.exercise_id; savedAt = SC.hhmm();
+    if(wasNew){ justAdded = out.exercise_id; cat = "All"; onlyMissing = false; }
+    openEditor(out.exercise_id);
+    window.scrollTo({top:0, behavior:"smooth"});
+    if(wasNew) toastAdded(x, out.exercise_id); else toastChanged(before, x, out.exercise_id);
   }catch(e){
-    fail("Couldn't save: " + e.message);
-    btn.disabled = false; btn.textContent = archive ? "Remove from library" : "Save";
+    fail("Couldn't save: " + e.message + ". Nothing was lost — your entries are still here.");
+    if(archive){ btn.disabled = false; btn.textContent = "Remove from library"; } else updateState();
   }
 }
 
-$("add-btn").addEventListener("click", () => openEditor("new"));
+function toastAdded(x, id){
+  SC.toast({ title: x.name + " added to the library",
+    sub: SC.isYT(x.video_url) ? "It's in the session builder now, with its video." : "It's in the session builder now. Add a video when you have one.",
+    actions: [
+      { label:"Use in a session", primary:true, onclick:()=>{ location.href = "sc-sessions.html?add=" + encodeURIComponent(id); } },
+      { label:"Add another", onclick:()=>openEditor("new") }
+    ] });
+}
+
+/* Says honestly what reached the sessions. A session keeps its own
+   sets, reps, load, rest and name; it takes the library's video and
+   cues only where it has none of its own. */
+function toastChanged(before, after, id){
+  const n = USED[id] || 0, inh = INHERIT[id] || {video:0, cues:0, either:0};
+  const changed = k => String(before[k]) !== String(after[k]);
+  const vid = changed("video_url"), cue = changed("cues");
+  const presc = ["measure","sets","amount","each_side","load_type","load","rest_s"].some(changed);
+  let sub;
+  if(!n) sub = "Not used in any sessions yet.";
+  else{
+    const k = vid && cue ? inh.either : vid ? inh.video : cue ? inh.cues : 0;
+    const parts = [ (vid || cue)
+      ? (k === n ? (n === 1 ? "Updated in the 1 session that uses it." : n === 2 ? "Updated in both sessions that use it." : "Updated in all " + n + " sessions that use it.")
+                 : "Updated in " + k + " of the " + n + " sessions that use it" + (k < n ? " — the others have their own " + (vid && !cue ? "video" : cue && !vid ? "cues" : "video or cues") + "." : "."))
+      : "No sessions updated." ];
+    if(presc) parts.push("Sessions already built keep their own sets, reps and load.");
+    if(changed("name")) parts.push("Built sessions keep the old name until they're next saved.");
+    sub = parts.join(" ");
+  }
+  SC.toast({ title: "Changes to " + after.name + " saved", sub: sub });
+}
+
+$("add-btn").addEventListener("click", () => { if(leaveOK()) openEditor("new"); });
+$("editor").addEventListener("input", updateState);
+$("editor").addEventListener("change", updateState);
+$("ed-name").addEventListener("input", () => { if($("ed-name").value.trim()) nameError(false); });
+window.addEventListener("beforeunload", e => { if(isDirty()){ e.preventDefault(); e.returnValue = ""; } });
 $("only-missing").addEventListener("change", e => { onlyMissing = e.target.checked; render(); });
 ["ed-video","ed-measure","ed-loadtype"].forEach(id => $(id).addEventListener("input", syncEditor));
 $("ed-save").addEventListener("click", () => save(false));
-$("ed-cancel").addEventListener("click", closeEditor);
+$("ed-cancel").addEventListener("click", () => { if(leaveOK()) closeEditor(); });
 $("ed-remove").addEventListener("click", () => {
   if(!LIVE) return;
   if(!removeArmed){
@@ -327,7 +427,14 @@ $("ed-remove").addEventListener("click", () => {
 
 (async function(){
   $("grid").appendChild(el("div",{class:"empty",style:"grid-column:1/-1",text:"Loading the library…"}));
-  try{ await load(); render(); }
+  try{
+    await load();
+    /* from "Session published": ?edit=<id> opens that exercise, ?missing=1 filters to no video */
+    const qs = new URLSearchParams(location.search);
+    if(qs.get("missing")) onlyMissing = true;
+    render();
+    if(qs.get("edit") && EXERCISES.some(x => x.exercise_id === qs.get("edit"))){ openEditor(qs.get("edit")); $("ed-video").focus(); }
+  }
   catch(e){
     $("grid").textContent = "";
     $("banners").appendChild(el("div",{class:"banner err",text:"Couldn't load the library: " + e.message}));
