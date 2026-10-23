@@ -650,8 +650,8 @@ function renderCard(c){
         remState[id] = "sending"; renderFeed();
         try{
           const out = await SC.post("sc_notify", {kind:"reminder", session_id:s.session_id, slug:p.slug});
-          remState[id] = out.phones ? "sent" : "nophone";
-          if(out.phones) remember(k, "sent");
+          remState[id] = (out.phones || out.already) ? "sent" : "nophone";
+          if(remState[id] === "sent") remember(k, "sent");
         }catch(e){ remState[id] = /unknown S&C request/i.test(e.message) ? "off" : "err"; console.error(e); }
         renderFeed();
       }}));

@@ -392,7 +392,8 @@ async function notifyPublished(){
   const p = PUB;
   try{
     const out = await SC.post("sc_notify", {kind:"published", session_id:p.ids[0]});
-    p.notify = {state:"sent", at:SC.hhmm(), phones:out.phones || 0, reached:out.players_reached || 0, players:out.players || p.players.length};
+    p.notify = out.already ? {state:"already", at:out.sent_at || ""}
+      : {state:"sent", at:SC.hhmm(), phones:out.phones || 0, reached:out.players_reached || 0, players:out.players || p.players.length};
   }catch(e){
     p.notify = /unknown S&C request/i.test(e.message) ? {state:"off"} : {state:"err", error:e.message};
   }
@@ -772,6 +773,8 @@ function notifyItem(p){
       "Sent " + n.at + " to " + n.phones + (n.phones === 1 ? " phone" : " phones") + "." +
       (missing ? " " + missing + " of " + total + " players haven't turned on notifications, so it's only on their Strength & Conditioning tab." : " It's on their Strength & Conditioning tab now."));
   }
+  if(n.state === "already") return checkItem("ok","Players already notified","They were told about this session" + (n.at ? " at " + n.at : "") + ", so they weren't notified again.");
+  if(n.state === "sent" && !n.phones && !n.reached) return checkItem("warn","Players not notified","None of the " + total + (total === 1 ? " player has" : " players have") + " turned on notifications yet. The session is on their Strength & Conditioning tab now.");
   if(n.state === "off") return checkItem("warn","Players not notified","Notifications from the hub aren't switched on yet. The session is on each player's Strength & Conditioning tab now.");
   return checkItem("warn","Players not notified","Couldn't send: " + n.error + ". The session is on their Strength & Conditioning tab now. ",
     [ el("button",{class:"btn btn-sm",type:"button",text:"Try again",onclick:()=>{ p.notify = {state:"sending"}; render(); notifyPublished(); }}) ]);
