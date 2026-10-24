@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<!-- Only Microsoft sign-in, Microsoft Graph (SharePoint) and the public roster sheet can be reached from this page. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:; connect-src https://login.microsoftonline.com https://graph.microsoft.com https://docs.google.com https://*.googleusercontent.com; base-uri 'none'; form-action 'none'">
+<!-- Only Microsoft sign-in, Microsoft Graph (SharePoint), the public roster / status feeds and the Player Portal Endpoint (status updates) can be reached from this page. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:; connect-src https://login.microsoftonline.com https://graph.microsoft.com https://docs.google.com https://*.googleusercontent.com https://script.google.com; base-uri 'none'; form-action 'none'">
 <title>Clinic Notes · Surrey 89ers Performance</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
@@ -161,6 +161,9 @@ body{font-family:'Inter',sans-serif;background:#080f0b;color:var(--offwhite);min
 .rom input{padding:7px 7px!important}
 .rom-del{background:none;border:none;color:var(--p-mid);font-size:18px;cursor:pointer;width:100%;height:100%;font-family:inherit}
 .rom-del .t{display:none}
+.st-k{min-width:110px}
+.status-now{font-size:12px;color:var(--p-mid);margin-top:8px;line-height:1.5}
+.status-now b{color:var(--p-ink);font-weight:600}
 .rom-lab{display:none;font-size:11px;color:var(--p-mid);font-weight:600;margin:0 0 2px 2px}
 .add-row{font-family:inherit;background:none;border:none;color:var(--p-accent);font-weight:700;font-size:13px;padding:8px 10px;cursor:pointer;text-decoration:underline}
 
@@ -297,7 +300,7 @@ body{font-family:'Inter',sans-serif;background:#080f0b;color:var(--offwhite);min
 
   <div class="main">
     <div>
-      <a class="back" href="index.html">← Coaches Hub</a>
+      <a class="back" href="index.html">← Performance Hub</a>
       <div class="page-title" style="margin-top:8px">Clinic Notes</div>
       <div class="page-sub" id="page-sub">Connecting to SharePoint…</div>
     </div>
@@ -405,8 +408,11 @@ body{font-family:'Inter',sans-serif;background:#080f0b;color:var(--offwhite);min
           <div class="p-head">P – PLAN</div>
           <div class="p-row"><div class="p-lab">Treatment today<small>Soft tissue, mobs, taping, exercise</small></div><div class="p-val"><textarea class="tall" data-k="treatment"></textarea></div></div>
           <div class="p-row"><div class="p-lab">Home / rehab programme</div><div class="p-val"><textarea class="tall" data-k="home"></textarea></div></div>
-          <div class="p-full p-inline"><span class="p-k">Availability:</span>
-            <div class="seg" data-seg="availability"><button data-v="Full">Full</button><button data-v="Modified">Modified</button><button data-v="Unavailable">Unavailable</button></div></div>
+          <div class="p-full">
+            <div class="p-inline"><span class="p-k st-k">Injury status:</span><div class="seg" data-seg="injuryStatus"><button data-v="Healthy">Healthy</button><button data-v="Questionable">Questionable</button><button data-v="Day to Day">Day to Day</button><button data-v="Doubtful">Doubtful</button><button data-v="Out">Out</button></div></div>
+            <div class="p-inline" style="margin-top:8px"><span class="p-k st-k">Game status:</span><div class="seg" data-seg="gameStatus"><button data-v="Available">Available</button><button data-v="Probable">Probable</button><button data-v="Questionable">Questionable</button><button data-v="Doubtful">Doubtful</button><button data-v="Out">Out</button></div></div>
+            <div class="status-now" id="status-now"></div>
+          </div>
           <div class="p-full p-inline"><span class="p-k">Updated:</span>
             <div class="seg" data-multi="updated"><button data-v="Coach">Coach</button><button data-v="S&amp;C">S&amp;C</button><button data-v="Medical team">Medical team</button></div></div>
           <div class="p-row"><div class="p-lab">Next review / referral</div><div class="p-val"><textarea data-k="next"></textarea></div></div>
@@ -475,6 +481,14 @@ const CFG = {
   siteHost: "surrey89ers.sharepoint.com",
   sitePath: "/sites/performance",
   listName: "Physio Notes",
+  // Pre-filled in "Sports therapist" on every new note (can be changed per note).
+  // "Signed" is always whoever is signed in, so the record shows who actually wrote it.
+  therapist: "Luke Mitchell",
+  // Injury and game status chosen in the Plan section also update the Physio Status
+  // sheet, which feeds player status on both dashboards. The update goes through the
+  // Player Portal Endpoint (Status.gs), which checks the Microsoft sign-in first.
+  statusEndpoint: "https://script.google.com/macros/s/AKfycbx-xVqT4EUY_ygD-AvzmfXE4EMcya1qlrsFtnKY7WzMaDTj-w9dwrH2Pbuvjbd6Mu0cKA/exec",
+  statusFeed: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgZ2Qfo4z1nhk_7IbG2OMRwtAwWPjqZlTMMsNNvQ6z108QAIlCQVKyHaBE5Z9nVeOf7HKy7W-CT1fm/pub?gid=56246200&single=true&output=csv",
   // The page's own address. Must match a redirect URI on the app registration
   // (Entra ID → App registrations → Surrey 89ers Performance → Authentication).
   redirect: location.origin + "/performance.html",
@@ -539,14 +553,16 @@ async function tokenRequest(params){
     const e=new Error(j.error_description||j.error||("Sign-in failed ("+res.status+")"));
     e.code=j.error; throw e;
   }
-  let user=(readJSON(K.tok)||{}).user||null;
+  const prev=readJSON(K.tok)||{};
+  let user=prev.user||null, idt=prev.idt||"", idExp=prev.idExp||0;
   if(j.id_token){
     try{
       const p=JSON.parse(decodeURIComponent(escape(atob(j.id_token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")))));
       user={name:p.name||"",email:p.preferred_username||""};
+      idt=j.id_token; idExp=(+p.exp||0)*1000;
     }catch(e){}
   }
-  const tok={access:j.access_token,refresh:j.refresh_token||params.refresh_token||"",exp:Date.now()+(+j.expires_in||3600)*1000,user};
+  const tok={access:j.access_token,refresh:j.refresh_token||params.refresh_token||"",exp:Date.now()+(+j.expires_in||3600)*1000,user,idt,idExp};
   SS.setItem(K.tok,JSON.stringify(tok));
   return tok;
 }
@@ -557,11 +573,16 @@ async function handleRedirect(){
   if(!h.has("code")&&!h.has("error")) return false;
   history.replaceState(null,"",location.pathname+location.search);
   const pk=readJSON(K.pkce); SS.removeItem(K.pkce);
+  // Other staff pages (e.g. the Treatment Log) sign in through this page, the one address
+  // registered with Microsoft. They leave their own file name in "next"; send the browser back there.
+  const next=(pk&&/^[a-z0-9-]+\.html$/i.test(pk.next||"")&&pk.next!==(location.pathname.split("/").pop()||""))?pk.next:"";
   if(h.get("error")){
+    if(next){ location.replace(next+"#auth_error="+encodeURIComponent(h.get("error_description")||h.get("error"))); return new Promise(()=>{}); }
     const e=new Error(h.get("error_description")||h.get("error")); e.code=h.get("error"); throw e;
   }
   if(!pk||pk.state!==h.get("state")) throw new Error("The sign-in response didn't match this page. Please sign in again.");
   await tokenRequest({grant_type:"authorization_code",code:h.get("code"),redirect_uri:CFG.redirect,code_verifier:pk.verifier});
+  if(next){ location.replace(next); return new Promise(()=>{}); }
   return true;
 }
 
@@ -787,6 +808,7 @@ const ROM_COLS=[["m","Movement"],["al","AROM L"],["ar","AROM R"],["sl","Strength
 const SEGS={};      // key -> value ("" when none)
 let UPDATED=[];     // multi-select
 let ROM=[];
+let LEGACY_AVAIL="";
 
 function buildForm(){
   document.querySelectorAll(".pain-scale").forEach(el=>{
@@ -839,7 +861,8 @@ function collect(){
   readRom();
   const r={v:1};
   document.querySelectorAll("#form [data-k]").forEach(el=>{r[el.dataset.k]=el.value.trim();});
-  ["session","painNow","painBest","painWorst","severity","irritability","availability"].forEach(k=>{r[k]=SEGS[k]||"";});
+  ["session","painNow","painBest","painWorst","severity","irritability","injuryStatus","gameStatus"].forEach(k=>{r[k]=SEGS[k]||"";});
+  if(LEGACY_AVAIL) r.availability=LEGACY_AVAIL;   // notes saved before injury/game status keep their old field
   r.rf={}; RED_FLAGS.forEach(([k])=>{if(SEGS["rf."+k]) r.rf[k]=SEGS["rf."+k];});
   r.updated=UPDATED.slice();
   r.rom=ROM.map(x=>({m:(x.m||"").trim(),al:(x.al||"").trim(),ar:(x.ar||"").trim(),sl:(x.sl||"").trim(),sr:(x.sr||"").trim()})).filter(x=>x.m||x.al||x.ar||x.sl||x.sr);
@@ -851,13 +874,14 @@ function fill(r){
   r=r||emptyRecord();
   document.querySelectorAll("#form [data-k]").forEach(el=>{el.value=r[el.dataset.k]||"";});
   Object.keys(SEGS).forEach(k=>delete SEGS[k]);
-  ["session","painNow","painBest","painWorst","severity","irritability","availability"].forEach(k=>{SEGS[k]=r[k]==null?"":String(r[k]);});
+  ["session","painNow","painBest","painWorst","severity","irritability","injuryStatus","gameStatus"].forEach(k=>{SEGS[k]=r[k]==null?"":String(r[k]);});
+  LEGACY_AVAIL=r.availability||"";
   RED_FLAGS.forEach(([k])=>{SEGS["rf."+k]=(r.rf||{})[k]||"";});
   UPDATED=(r.updated||[]).slice();
   ROM=(r.rom&&r.rom.length?r.rom:[{},{},{}]).map(x=>Object.assign({},x));
   MARKS=(r.marks||[]).map(m=>Object.assign({},m));
-  if(!$("f-therapist").value) $("f-therapist").value=me();
-  paintSegs(); renderRom(); renderChart(); updateSaveBtn();
+  if(!$("f-therapist").value) $("f-therapist").value=CFG.therapist;
+  paintSegs(); renderRom(); renderChart(); updateSaveBtn(); showStatusNow();
 }
 function hasContent(r){
   return Object.keys(r).some(k=>{
@@ -895,9 +919,9 @@ function recordText(r,slug,date,signedBy,signedDate){
   addO("Special / functional tests",r.tests);
   if(O.length){L.push("","O – OBJECTIVE");L.push.apply(L,O);}
   if(r.diagnosis||r.goals){L.push("","A – ASSESSMENT");add("Working diagnosis",r.diagnosis);add("Problems & goals",r.goals);}
-  if(r.treatment||r.home||r.availability||(r.updated||[]).length||r.next){
+  if(r.treatment||r.home||r.injuryStatus||r.gameStatus||r.availability||(r.updated||[]).length||r.next){
     L.push("","P – PLAN");add("Treatment today",r.treatment);add("Home / rehab programme",r.home);
-    add("Availability",r.availability);add("Updated",(r.updated||[]).join(", "));add("Next review / referral",r.next);
+    add("Injury status",r.injuryStatus);add("Game status",r.gameStatus);add("Availability",r.availability);add("Updated",(r.updated||[]).join(", "));add("Next review / referral",r.next);
   }
   L.push("","Signed: "+(signedBy||"")+(signedDate?" — "+prettyDay(signedDate,true):""));
   return L.join("\n");
@@ -954,6 +978,13 @@ async function saveNote(){
   fields[COL.date]=date+"T12:00:00Z";   // midday UTC keeps the date-only column on the right UK day
   fields[COL.note]=recordText(r,slug,date,r.signedBy,r.signedDate)+(r.editedBy?"\nEdited by "+r.editedBy+" — "+prettyDay(r.editedDate,true):"");
   fields[COL.record]=JSON.stringify(r);
+  // Update the dashboards when a status is set. When editing an older note, only if the status was changed now,
+  // so re-saving an old note never puts an old status back on the dashboards.
+  let push=false;
+  if(slug!==SQUAD.slug&&(r.injuryStatus||r.gameStatus)){
+    if(EDITING){ const o=NOTES.find(n=>n.id===EDITING), or=(o&&o.rec)||{}; push=(or.injuryStatus||"")!==r.injuryStatus||(or.gameStatus||"")!==r.gameStatus; }
+    else push=true;
+  }
   const btn=$("save-btn"); btn.disabled=true; st.className="status"; st.textContent="Saving…";
   try{
     if(EDITING){
@@ -966,9 +997,15 @@ async function saveNote(){
     }
     sortNotes();
     const wasEditing=!!EDITING;
+    let statusMsg="", statusBad=false;
+    if(push){
+      st.textContent="Note saved. Updating the dashboards…";
+      try{ await pushStatus(playerName(slug),r.injuryStatus,r.gameStatus); statusMsg=" Dashboards updated: "+[r.injuryStatus,r.gameStatus].filter(Boolean).join(" · ")+"."; }
+      catch(e){ statusBad=true; statusMsg=" But the dashboards weren't updated: "+e.message+"."; }
+    }
     resetForm();
-    st.className="status ok"; st.textContent=wasEditing?"Changes saved ✓":"Saved ✓";
-    setTimeout(()=>{if(/✓/.test(st.textContent)) st.textContent="";},5000);
+    st.className="status "+(statusBad?"bad":"ok"); st.textContent=(wasEditing?"Changes saved ✓":"Saved ✓")+statusMsg;
+    if(!statusBad) setTimeout(()=>{if(/✓/.test(st.textContent)) st.textContent="";},7000);
     renderList(); updatePrevBtn();
     window.scrollTo({top:0,behavior:"smooth"});
   }catch(e){
@@ -981,7 +1018,7 @@ async function saveNote(){
 function resetForm(){
   EDITING=null; SS.removeItem(K.draft);
   const keepTherapist=$("f-therapist").value;
-  fill(null); $("f-therapist").value=keepTherapist||me();
+  fill(null); $("f-therapist").value=keepTherapist||CFG.therapist;
   $("player").value=""; $("note-date").value=todayISO();
   $("cancel-edit").hidden=true; $("tab-form").textContent="New note";
   updatePrevBtn(); updateSaveBtn();
@@ -1010,6 +1047,74 @@ function copyPrevious(){
   if(!cur.session) cur.session="Follow-up";
   fill(cur); saveDraft();
   const st=$("save-status"); st.className="status"; st.textContent="Copied from the "+prettyDay(n.date)+" note. Check and update before saving.";
+}
+
+/* ============================================================
+   INJURY & GAME STATUS → Physio Status sheet → both dashboards
+   ============================================================ */
+const INJURY_OPTS=["Healthy","Questionable","Day to Day","Doubtful","Out"];
+const GAME_OPTS=["Available","Probable","Questionable","Doubtful","Out"];
+function sevClass(v){return /^(healthy|available)$/i.test(v)?"full":/^(doubtful|out)$/i.test(v)?"unavailable":"modified";}
+function normName(s){return String(s||"").toLowerCase().replace(/[^a-z]/g,"");}
+
+let STATUS_NOW={}, STATUS_FEED_OK=false;   // normalised player name -> {injury, game}
+async function loadStatusFeed(){
+  try{
+    const res=await fetch(CFG.statusFeed+"&cachebust="+Date.now());
+    if(!res.ok) throw new Error("feed "+res.status);
+    const rows=rosterParseCSV(await res.text());
+    const h=rows.findIndex(r=>r.some(c=>c.trim().toLowerCase()==="player"));
+    if(h<0) return;
+    const head=rows[h].map(c=>c.trim().toLowerCase());
+    const cP=head.indexOf("player"), cI=head.indexOf("injury_status"), cG=head.indexOf("game_status");
+    rows.slice(h+1).forEach(r=>{ if(r[cP]) STATUS_NOW[normName(r[cP])]={injury:(r[cI]||"").trim(),game:(r[cG]||"").trim()}; });
+    STATUS_FEED_OK=true;
+  }catch(e){ console.error("Physio status feed unreachable:",e); }
+}
+function statusFor(slug){
+  if(!slug||slug===SQUAD.slug) return null;
+  const name=playerName(slug), k=normName(name);
+  if(STATUS_NOW[k]) return STATUS_NOW[k];
+  // first name + surname initial, as the dashboards match
+  const parts=name.trim().toLowerCase().split(/\s+/), first=normName(parts[0]);
+  if(parts.length<2||!first) return null;
+  const hit=Object.keys(STATUS_NOW).filter(n=>n.indexOf(first)===0&&n.charAt(first.length)===parts[parts.length-1].charAt(0));
+  return hit.length===1?STATUS_NOW[hit[0]]:null;
+}
+function showStatusNow(){
+  const el=$("status-now"); if(!el) return;
+  const slug=$("player").value;
+  if(!slug){ el.textContent="Choose a player. Saving with a status updates the player's status on both dashboards."; return; }
+  if(slug===SQUAD.slug){ el.textContent="Status isn't updated for squad / general notes."; return; }
+  const cur=statusFor(slug);
+  el.innerHTML=(cur&&(cur.injury||cur.game)
+    ? 'On the dashboards now: <b>'+esc(cur.injury||"not set")+'</b> · <b>'+esc(cur.game||"not set")+'</b>. '
+    : (STATUS_FEED_OK?'Not set on the dashboards yet. ':''))+
+    (EDITING?'Changing a status here and saving updates the dashboards.':'Saving this note with a status updates the dashboards.');
+}
+
+/* Asks Status.gs (Player Portal Endpoint) to set the player's row on the Physio
+   Status sheet. Sends the Microsoft ID token, which proves who is signed in but
+   gives no access to SharePoint; Status.gs checks it before changing anything. */
+async function getIdToken(){
+  let t=readJSON(K.tok)||{};
+  if(t.idt&&t.idExp-120000>Date.now()) return t.idt;
+  await getToken(true);            // a refresh brings a new ID token
+  t=readJSON(K.tok)||{};
+  return (t.idt&&t.idExp>Date.now())?t.idt:"";
+}
+async function pushStatus(player,injury,game){
+  const idt=await getIdToken();
+  if(!idt) throw new Error("your Microsoft sign-in needs renewing. Sign out and back in, then save again");
+  let res;
+  try{
+    res=await fetch(CFG.statusEndpoint,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},redirect:"follow",
+      body:JSON.stringify({type:"physio_status",id_token:idt,player,injury_status:injury,game_status:game})});
+  }catch(e){ throw new Error("couldn't reach the status service"); }
+  let out; try{ out=await res.json(); }catch(e){ throw new Error("the status service didn't answer ("+res.status+")"); }
+  if(!out||!out.ok) throw new Error((out&&out.error)||"unknown error");
+  STATUS_NOW[normName(out.player||player)]={injury:out.injury_status||injury,game:out.game_status||game};
+  return out;
 }
 
 /* ---------------- roster ---------------- */
@@ -1073,6 +1178,11 @@ function onPlayerChange(){
   if(!$("f-position").value) $("f-position").value=(last&&last.rec.position)||(p&&p.pos)||"";
   if(!$("f-dob").value&&last&&last.rec.dob) $("f-dob").value=last.rec.dob;
   if(!$("f-squad").value&&last&&last.rec.squad) $("f-squad").value=last.rec.squad;
+  if(!EDITING&&!SEGS.injuryStatus&&!SEGS.gameStatus){
+    const cur=statusFor(slug);
+    if(cur){ SEGS.injuryStatus=INJURY_OPTS.includes(cur.injury)?cur.injury:""; SEGS.gameStatus=GAME_OPTS.includes(cur.game)?cur.game:""; paintSegs(); }
+  }
+  showStatusNow();
   saveDraft(); updateSaveBtn(); updatePrevBtn();
 }
 
@@ -1119,7 +1229,9 @@ function renderList(){
     const line=r?(r.problem||r.diagnosis||r.treatment||"(no main problem recorded)"):n.text;
     const tags=[];
     if(r&&r.session) tags.push('<span class="tag">'+esc(r.session)+'</span>');
-    if(r&&r.availability) tags.push('<span class="tag '+r.availability.toLowerCase()+'">'+esc(r.availability)+'</span>');
+    if(r&&r.injuryStatus) tags.push('<span class="tag '+sevClass(r.injuryStatus)+'">Injury: '+esc(r.injuryStatus)+'</span>');
+    if(r&&r.gameStatus) tags.push('<span class="tag '+sevClass(r.gameStatus)+'">Game: '+esc(r.gameStatus)+'</span>');
+    if(r&&r.availability&&!r.injuryStatus&&!r.gameStatus) tags.push('<span class="tag '+r.availability.toLowerCase()+'">'+esc(r.availability)+'</span>');
     if(r&&RED_FLAGS.some(([k])=>(r.rf||{})[k]==="Y")) tags.push('<span class="tag flag">Red flag</span>');
     if(r&&r.marks&&r.marks.length) tags.push('<span class="tag">'+esc([...new Set(r.marks.map(m=>m.region))].slice(0,3).join(", "))+'</span>');
     return '<button class="nl-item" onclick="openNote(\''+esc(n.id)+'\')">'+
@@ -1196,7 +1308,9 @@ function paperHTML(n){
   h+='<div class="p-box"><div class="p-head">A – ASSESSMENT</div>'+row("Working diagnosis","","diagnosis")+row("Problems &amp; goals","","goals")+'</div>';
   h+='<div class="p-box"><div class="p-head">P – PLAN</div>'+
     row("Treatment today","Soft tissue, mobs, taping, exercise","treatment")+row("Home / rehab programme","","home")+
-    '<div class="p-full p-inline"><span class="p-k">Availability:</span>'+ticks(["Full","Modified","Unavailable"],r.availability)+'</div>'+
+    '<div class="p-full p-inline"><span class="p-k st-k">Injury status:</span>'+ticks(INJURY_OPTS,r.injuryStatus)+'</div>'+
+    '<div class="p-full p-inline"><span class="p-k st-k">Game status:</span>'+ticks(GAME_OPTS,r.gameStatus)+'</div>'+
+    (r.availability?'<div class="p-full p-inline"><span class="p-k st-k">Availability:</span>'+ticks(["Full","Modified","Unavailable"],r.availability)+'</div>':'')+
     '<div class="p-full p-inline"><span class="p-k">Updated:</span>'+ticks(["Coach","S&C","Medical team"],r.updated,true)+'</div>'+
     row("Next review / referral","","next")+'</div>';
   h+='<div class="p-box"><div class="p-grid2">'+cell("Signed:",'<div class="ro">'+esc(r.signedBy||n.by)+'</div>')+
@@ -1232,8 +1346,9 @@ async function init(){
   showTab("form");
 
   const rosterP=loadRoster().then(r=>{PLAYERS=r;fillPlayers();});
-  await rosterP;
+  await Promise.all([rosterP,loadStatusFeed()]);
   restoreDraft();
+  showStatusNow();
   READY_FORM=true;
   try{
     await connect();

@@ -14,9 +14,12 @@
         back link and side navigation stay inside this hub.
 
    To add a section: add it to SECTIONS. If it is a Coaches Hub page,
-   also add a rewrite for it in vercel.json. A page that must stay on
-   the Coaches Hub address (Microsoft sign-in) gets ext: true and a full
-   COACHES_HUB address instead; it opens in a new tab.
+   also add a rewrite for it in vercel.json. An entry with ext: true and
+   a full address opens in a new tab instead.
+
+   Clinic Notes (performance.html) and the Treatment Log (treatment.html)
+   live in this repo only (moved from the Coaches Hub 24 Oct 2026). They
+   use Microsoft sign-in, not the hub password, and do not load this file.
    ============================================================ */
 (function () {
   var COACHES_HUB = "https://surrey-89ers-coaches-zsex.vercel.app/";
@@ -26,10 +29,8 @@
     { group: "Strength & Conditioning", href: "sc-sessions.html", icon: "🗓", label: "Sessions",         sub: "Build, assign and publish sessions" },
     { group: "Strength & Conditioning", href: "sc-library.html",  icon: "🎬", label: "Exercise Library", sub: "Exercises with demo videos and cues" },
     { group: "Therapy",  href: "therapy.html",       icon: "🩺", label: "Therapy",             sub: "The physio's area" },
-    // Clinic Notes and the Treatment Log live on the Coaches Hub for now: their
-    // Microsoft sign-in is registered to that address only. They open in a new tab.
-    { group: "Therapy",  href: COACHES_HUB + "performance.html", ext: true, icon: "🗒", label: "Clinic Notes",  sub: "SOAP notes in SharePoint (Coaches Hub, Microsoft sign-in)" },
-    { group: "Therapy",  href: COACHES_HUB + "treatment.html",   ext: true, icon: "🩹", label: "Treatment Log", sub: "Treatment list and injury records (Coaches Hub, Microsoft sign-in)" },
+    { group: "Therapy",  href: "performance.html",   icon: "🗒", label: "Clinic Notes",        sub: "SOAP notes in SharePoint (Microsoft sign-in)" },
+    { group: "Therapy",  href: "treatment.html",     icon: "🩹", label: "Treatment Log",       sub: "Treatment list and injury records (Microsoft sign-in)" },
     { group: "Squad",    href: "wellness.html",      icon: "📈", label: "Squad Wellness",      sub: "Daily check-ins and flags" },
     { group: "Squad",    href: "load.html",          icon: "📊", label: "Training Load",       sub: "Session RPE and ACWR" },
     { group: "Squad",    href: "attendance.html",    icon: "📝", label: "Attendance & Injury", sub: "Season attendance grid and physio status" },
