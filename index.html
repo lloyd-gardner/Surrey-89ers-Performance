@@ -99,6 +99,20 @@ button.pill.saving{opacity:.55;cursor:progress}
 .treat-who .note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 @media (max-width:600px){ .treat-list{grid-template-columns:1fr} .treat-row{border-right:0} }
 
+/* post-game check-in (Nov 2026) */
+.pg-card{overflow:hidden;margin-bottom:16px}
+.pg-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border-soft);min-width:0}
+.pg-row:last-child{border-bottom:0}
+.pg-who{flex:1;min-width:0}
+.pg-scores{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--offwhite-mid);margin-top:3px}
+.pg-scores b{font-family:'Space Grotesk',sans-serif;font-size:13px}
+.pg-inj{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(224,85,85,0.06);border:1px solid rgba(224,85,85,0.2)}
+.pg-inj-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700}
+.pg-inj-det{font-size:11.5px;color:var(--offwhite-mid);line-height:1.45;margin-top:3px}
+.pg-inj-det b{color:var(--offwhite);font-weight:600}
+.pg-fine{padding:11px 16px;font-size:11.5px;color:var(--offwhite-mid);line-height:1.5}
+.pg-trt{flex:none;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--amber);white-space:nowrap;padding-top:3px}
+
 /* the two sections */
 .sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .section{display:flex;align-items:center;gap:16px;padding:22px 20px;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s;min-height:110px}
@@ -158,6 +172,14 @@ button.pill.saving{opacity:.55;cursor:progress}
         <span class="hint" id="treat-note">Booked on today's check-in</span>
       </div>
       <div id="treat-body"><div class="empty" style="border:0">Loading treatment bookings…</div></div>
+    </section>
+
+    <section class="card pg-card" aria-labelledby="pg-h" id="pg-card" hidden>
+      <div class="status-head">
+        <h2 class="card-title" id="pg-h">Post-game check-in</h2>
+        <span class="hint" id="pg-note"></span>
+      </div>
+      <div id="pg-body"></div>
     </section>
 
     <section class="card status-card" aria-labelledby="status-h">
@@ -247,6 +269,7 @@ async function init(){
     settle(SC.readTab("SESSIONS")), settle(SC.readTab("SESSION EXERCISES")), settle(SC.loadStrengthLog()),
     settle(loadTreatmentToday())
   ]);
+  renderPostGame(roster.ok && roster.v.length ? roster.v : null);
   /* A status changed here is held on screen until the published feed shows it. */
   if(physio.ok) applyPending(physio.v);
   checkPhysioSaving();
@@ -358,6 +381,118 @@ function renderTreatment(treat, roster){
     ]));
   });
   body.appendChild(grid);
+}
+
+/* ============================================================
+   POST-GAME LOG reader (Nov 2026)
+   The day after a game, players fill in a post-game check-in on
+   their portal (soreness, tiredness & sleep, mood — 1-5, 5 good —
+   then any injuries). PostGame.gs writes one row per injury, or one
+   row with injury "No"; every row of one submission shares its
+   timestamp, so each player's LATEST timestamp is their report.
+   -> { slug: {slug, name, date, ts, game, soreness, tiredness, mood,
+               treatment, note, injuries:[{area, side, severity (1-5,
+               5 = severe), mechanism, how, limitations, symptoms}]} }
+   ============================================================ */
+const PG_COLS=["timestamp","date","slug","name","game","soreness","tiredness","mood","injury","injury_no",
+               "area","side","severity","mechanism","how","limitations","symptoms","treatment","note"];
+function pgReports(rows, sinceISO){
+  rows=(rows||[]).filter(r=>r.some(c=>String(c==null?"":c).trim()!==""));
+  if(rows.length<2) return {};
+  const head=rows[0].map(h=>String(h).toLowerCase().replace(/[^a-z_]/g,""));
+  const idx={}; PG_COLS.forEach(n=>{const i=head.indexOf(n); idx[n]=i>=0?i:PG_COLS.indexOf(n);});
+  const g=(r,n)=>String(r[idx[n]]==null?"":r[idx[n]]).trim();
+  const out={};
+  rows.slice(1).forEach(r=>{
+    const slug=g(r,"slug").toLowerCase(), date=g(r,"date").slice(0,10), ts=g(r,"timestamp");
+    if(!slug||slug==="slug"||/^test-/.test(slug)||!/^\d{4}-\d\d-\d\d$/.test(date)||date<(sinceISO||"")) return;   /* test-… = test account */
+    let cur=out[slug];
+    if(!cur||date>cur.date||(date===cur.date&&ts>cur.ts)){
+      cur=out[slug]={slug, name:g(r,"name"), date, ts, game:g(r,"game"),
+        soreness:+g(r,"soreness")||0, tiredness:+g(r,"tiredness")||0, mood:+g(r,"mood")||0,
+        treatment:g(r,"treatment"), note:g(r,"note"), injuries:[]};
+    }
+    if(cur.ts!==ts||cur.date!==date) return;
+    if(g(r,"injury").toLowerCase()==="yes"&&g(r,"area")){
+      cur.injuries.push({area:g(r,"area"), side:g(r,"side"), severity:+g(r,"severity")||0,
+        mechanism:g(r,"mechanism"), how:g(r,"how"), limitations:g(r,"limitations"), symptoms:g(r,"symptoms")});
+    }
+  });
+  Object.values(out).forEach(x=>x.injuries.sort((a,b)=>b.severity-a.severity));
+  return out;
+}
+/* "R Ankle", "Lower back", "Both Calf" */
+function pgWhere(x){const s={Left:"L ",Right:"R ",Both:"Both "}[x.side]||"";return s+x.area;}
+/* one line per injury: "R Ankle · 4/5 · Contact" */
+function pgInjuryLine(x){return [pgWhere(x), x.severity?x.severity+"/5":"", x.mechanism].filter(Boolean).join(" · ");}
+
+/* ---------- Post-game check-in ----------
+   The most recent game's reports, shown from the morning after until two
+   days later. Injuries first (worst first) with everything the player
+   said about them; anyone with nothing to report and no low score is
+   folded into one "nothing to report" line. */
+async function renderPostGame(roster){
+  const card=$("pg-card"), body=$("pg-body"), note=$("pg-note");
+  try{
+    const url="https://docs.google.com/spreadsheets/d/"+WELL_SHEET_ID+
+      "/gviz/tq?tqx=out:csv&headers=0&sheet="+encodeURIComponent("POST-GAME LOG")+"&cachebust="+Date.now();
+    const res=await fetch(url); if(!res.ok) return;
+    const reps=Object.values(pgReports(SC.parseCSV(await res.text()), SC.addDaysISO?SC.addDaysISO(SC.todayISO(),-2):""));
+    if(!reps.length) return;
+    const last=reps.map(r=>r.date).sort().pop();
+    const today=SC.todayISO();
+    if(SC.addDaysISO && last<SC.addDaysISO(today,-2)) return;
+    const bySlug={}; (roster||[]).forEach(p=>bySlug[p.slug]=p);
+    const mine=reps.filter(r=>r.date===last && (!roster || bySlug[r.slug]));
+    if(!mine.length) return;
+    const game=(mine.find(r=>r.game)||{}).game||"";
+    const low=r=>[r.soreness,r.tiredness,r.mood].some(v=>v&&v<3.5);
+    const worst=r=>Math.min.apply(null,[r.soreness,r.tiredness,r.mood].filter(Boolean).concat([5]));
+    const sev=r=>r.injuries.length?(r.injuries[0].severity||1):0;
+    const shown=mine.filter(r=>r.injuries.length||low(r)).sort((a,b)=>sev(b)-sev(a)||worst(a)-worst(b));
+    const fine=mine.filter(r=>!r.injuries.length&&!low(r));
+    const injN=mine.filter(r=>r.injuries.length).length;
+    const dayWord=last===today?"Today":new Date(last+"T12:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+
+    $("pg-h").textContent="Post-game check-in"+(game?" · "+game:"");
+    note.textContent=[dayWord, mine.length+(roster?" of "+roster.length:"")+" reported",
+                      injN?injN+" with an injury":"no injuries reported"].join(" · ");
+    body.textContent="";
+    const tcls=v=>v>=3.5?"t-good":v>=2.5?"t-watch":"t-bad";
+    const score=(label,v)=>el("span",{},[label+" ", el("b",{class:v?tcls(v):"t-gray",text:v?String(v):"—"})]);
+    shown.forEach(r=>{
+      const p=bySlug[r.slug]||{slug:r.slug,name:r.name||r.slug,pos:"",num:""};
+      const inj=r.injuries.map(x=>el("div",{class:"pg-inj"},[
+        el("div",{class:"pg-inj-top"},[ pgWhere(x),
+          x.severity?el("span",{class:"pill "+(x.severity>=4?"c-bad":"c-watch"),text:x.severity+"/5"}):null,
+          x.mechanism?el("span",{class:"pill c-gray",text:x.mechanism}):null ]),
+        el("div",{class:"pg-inj-det"},[
+          x.how?el("div",{},[el("b",{text:"How: "}),x.how]):null,
+          x.limitations?el("div",{},[el("b",{text:"Limits: "}),x.limitations]):null,
+          x.symptoms?el("div",{},[el("b",{text:"Symptoms: "}),x.symptoms]):null ])
+      ]));
+      body.appendChild(el("div",{class:"pg-row"},[
+        playerLink(p,[SC.avatar(p)]),
+        el("div",{class:"pg-who"},[
+          el("div",{class:"p-name",text:p.name}),
+          el("div",{class:"pg-scores"},[score("Soreness",r.soreness),score("Tired / sleep",r.tiredness),score("Mood",r.mood)]),
+          r.note?el("div",{class:"note",text:"“"+r.note+"”"}):null
+        ].concat(inj)),
+        /^yes$/i.test(r.treatment)?el("div",{class:"pg-trt",text:"⚕ Treatment"}):null
+      ]));
+    });
+    if(fine.length){
+      body.appendChild(el("div",{class:"pg-fine",text:(shown.length?"Nothing to report: ":"Nobody reported an injury or a low score. Checked in: ")+
+        fine.map(r=>(bySlug[r.slug]||{}).name||r.name||r.slug).join(", ")}));
+    }
+    if(roster && last===today){
+      const missing=roster.filter(p=>!mine.some(r=>r.slug===p.slug)).map(p=>p.name);
+      if(missing.length) body.appendChild(el("div",{class:"pg-fine",text:"Still to check in: "+missing.join(", ")}));
+    }
+    card.hidden=false;
+  }catch(e){
+    console.error("POST-GAME LOG not readable (normal before the first post-game check-in):",e);
+  }
 }
 
 function kpi(label, value, small, sub, cls){
