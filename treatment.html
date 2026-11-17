@@ -604,11 +604,44 @@ async function loadWellness(){
     WELL_ROWS=raw.slice(1).map(r=>({date:get(r,"date").slice(0,10),slug:get(r,"slug").toLowerCase(),name:get(r,"name"),
       yes:/^(yes|true|y)$/i.test(get(r,"treatment")),time:hhmm(get(r,"treatment_time"))})).filter(r=>r.slug&&r.slug!=="slug"&&!/^test-/.test(r.slug));
   }catch(e){ console.error("WELLNESS LOG unreachable:",e); WELL_OK=false; WELL_ROWS=[]; }
+  /* post-practice check-in requests (Nov 2026) — a missing tab is fine */
+  try{
+    const res=await fetch(rosterTabURL("PRACTICE LOG").replace(ROSTER_SHEET_ID,CFG.wellnessSheet));
+    PRAC_ROWS=res.ok?csvRows(await res.text()):[];
+  }catch(e){ console.error("PRACTICE LOG unreachable:",e); PRAC_ROWS=[]; }
 }
+let PRAC_ROWS=[];
+/* PRACTICE LOG (post-practice check-in, Nov 2026): treatment heads-ups.
+   Each player's latest submission on a day counts, and a "Yes" there is a
+   request for the NEXT day — no time slot, the physio follows up.
+   -> { slug: {for, name} } for requests made on dateISO */
+const PRAC_COLS=["timestamp","date","slug","name","session","start_time","duration_min","rpe","treatment","treatment_for"];
+function practiceRequests(rows, dateISO){
+  rows=(rows||[]).filter(r=>r.some(c=>String(c==null?"":c).trim()!==""));
+  if(rows.length<2) return {};
+  const head=rows[0].map(h=>String(h).toLowerCase().replace(/[^a-z_]/g,""));
+  const ix={}; PRAC_COLS.forEach((n,k)=>{const i=head.indexOf(n); ix[n]=i>=0?i:k;});
+  const g=(r,n)=>String(r[ix[n]]==null?"":r[ix[n]]).trim();
+  const latest={};
+  rows.slice(1).forEach(r=>{
+    const s=g(r,"slug").toLowerCase();
+    if(!s||s==="slug"||/^test-/.test(s)||g(r,"date").slice(0,10)!==dateISO) return;   /* test-… = test account */
+    const ts=g(r,"timestamp");
+    if(!latest[s]||ts>=latest[s].ts) latest[s]={ts, yes:/^yes$/i.test(g(r,"treatment")), for:g(r,"treatment_for"), name:g(r,"name")};
+  });
+  const out={}; Object.keys(latest).forEach(s=>{ if(latest[s].yes) out[s]={for:latest[s].for, name:latest[s].name}; });
+  return out;
+}
+function isoAddDays(iso,n){const p=iso.split("-");const d=new Date(+p[0],+p[1]-1,+p[2]+n);const z=x=>(x<10?"0":"")+x;return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());}
+
 function bookingsFor(day){
   const latest={};
   (WELL_ROWS||[]).forEach(r=>{ if(r.date===day) latest[r.slug]=r; });   // rows are in time order: later rows win
   const out={}; Object.keys(latest).forEach(s=>{ if(latest[s].yes) out[s]=latest[s]; });
+  /* plus anyone who asked after the previous day's practice — a later "No"
+     on the morning check-in doesn't cancel that */
+  const ahead=practiceRequests(PRAC_ROWS,isoAddDays(day,-1));
+  Object.keys(ahead).forEach(s=>{ out[s]=Object.assign({slug:s,time:"",name:ahead[s].name},out[s]||{},{yes:true,ahead:ahead[s].for||""}); });
   return out;
 }
 
@@ -623,7 +656,7 @@ function dayRows(){
   BOOKINGS=bookingsFor(DAY);
   const recs=RECS.filter(r=>r.date===DAY), by={};
   const add=(slug,o)=>{ by[slug]=Object.assign(by[slug]||{slug,time:"",booked:false,recs:[]},o); };
-  Object.keys(BOOKINGS).forEach(s=>add(s,{time:BOOKINGS[s].time,booked:true}));
+  Object.keys(BOOKINGS).forEach(s=>add(s,{time:BOOKINGS[s].time,booked:true,ahead:BOOKINGS[s].ahead}));
   recs.forEach(r=>{ add(r.slug,{}); by[r.slug].recs.push(r); if(!by[r.slug].time&&r.r.booked) by[r.slug].time=r.r.booked; if(r.r.source==="booked") by[r.slug].booked=true; });
   (ADDED[DAY]||[]).forEach(s=>add(s,{}));
   Object.values(by).forEach(x=>x.recs.sort((a,b)=>String(a.created).localeCompare(String(b.created))));
@@ -645,18 +678,18 @@ function renderDay(){
   $("day-label").textContent=prettyDay(DAY,true)+(isToday?" · today":"");
   $("today-btn").hidden=isToday;
   const booked=rows.filter(x=>x.booked).length, done=rows.filter(x=>x.recs.length).length, todo=rows.length-done;
-  $("counts").textContent=rows.length?[booked?booked+" booked":"",done?done+" recorded":"",todo?todo+" to record":""].filter(Boolean).join(" · "):"";
+  $("counts").textContent=rows.length?[booked?booked+" asked":"",done?done+" recorded":"",todo?todo+" to record":""].filter(Boolean).join(" · "):"";
   if(!rows.length){
-    $("rows").innerHTML='<div class="empty">'+(WELL_OK?"No treatment booked on check-ins for this day.":"The check-in sheet couldn't be read, so bookings aren't shown.")+' Add anyone you treat below.</div>';
+    $("rows").innerHTML='<div class="empty">'+(WELL_OK?"Nobody asked for treatment for this day.":"The check-in sheet couldn't be read, so bookings aren't shown.")+' Add anyone you treat below.</div>';
   }else{
     $("rows").innerHTML=rows.map(x=>{
       const name=playerName(x.slug), dna=x.recs.length&&x.recs.every(r=>r.r.kind==="DNA");
       const chip=!x.recs.length?'<span class="chip-st todo">To record</span>':dna?'<span class="chip-st dna">Didn\'t attend</span>':'<span class="chip-st done">Recorded ✓</span>';
-      const sub=x.booked?(x.time?"Booked on check-in":"Booked on check-in, no time chosen"):"Added — didn't book";
+      const sub=x.booked?(x.ahead!==undefined?"Asked after the previous day's practice"+(x.ahead?": "+x.ahead:""):(x.time?"Booked on check-in":"Asked on the morning check-in")):"Added — didn't ask";
       const sum=x.recs.filter(r=>r.r.kind!=="DNA").map(r=>esc(recSummary(r.r))).join("<br>");
       return '<div class="tl-row" id="row-'+esc(x.slug)+'">'+
         '<button class="tl-head" onclick="toggleRow(\''+esc(x.slug)+'\')">'+
-          (x.time?'<div class="tl-time">'+esc(x.time)+'</div>':'<div class="tl-time none">'+(x.booked?"No time":"Walk-in")+'</div>')+
+          (x.time?'<div class="tl-time">'+esc(x.time)+'</div>':'<div class="tl-time none">'+(x.booked?"Asked":"Walk-in")+'</div>')+
           '<div><div class="tl-name">'+esc(name)+'</div><div class="tl-sub">'+esc(sub)+'</div>'+(sum?'<div class="tl-sum">'+sum+'</div>':'')+'</div>'+
           chip+'</button>'+
         (OPEN===x.slug?'<div class="editor" id="editor"></div>':'')+'</div>';

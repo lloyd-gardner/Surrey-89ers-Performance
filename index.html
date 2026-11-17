@@ -96,6 +96,8 @@ button.pill.saving{opacity:.55;cursor:progress}
 .treat-time{flex:none;width:62px;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--green-text)}
 .treat-time.none{font-family:Inter,sans-serif;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;line-height:1.25;color:var(--amber)}
 .treat-who{min-width:0;flex:1}
+.treat-tom{padding:11px 16px;border-top:1px solid var(--border-soft);font-size:12px;color:var(--offwhite-mid);line-height:1.5}
+.treat-tom-h{font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--green-text);margin-bottom:3px}
 .treat-who .note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 @media (max-width:600px){ .treat-list{grid-template-columns:1fr} .treat-row{border-right:0} }
 
@@ -169,7 +171,7 @@ button.pill.saving{opacity:.55;cursor:progress}
     <section class="card treat-card" aria-labelledby="treat-h">
       <div class="status-head">
         <h2 class="card-title" id="treat-h">Treatment today</h2>
-        <span class="hint" id="treat-note">Booked on today's check-in</span>
+        <span class="hint" id="treat-note">Asked for after practice or on today's check-in</span>
       </div>
       <div id="treat-body"><div class="empty" style="border:0">Loading treatment bookings…</div></div>
     </section>
@@ -319,8 +321,49 @@ const WELL_SHEET_ID="1NqYAMc7L_yzaiTlms6SpjvhhoJqg19n5XYtj7IGcJqg";
 /* Column order: the fallback for headers Google has blanked. */
 const TREAT_COLS=["timestamp","date","slug","name","sleep_quality","soreness","mood","sleep_duration","stress","energy","treatment","note","treatment_time"];
 
-/* -> { slug: { yes, time:"HH:MM"|"", note, name } } for every player who checked in today */
+/* PRACTICE LOG (post-practice check-in, Nov 2026): treatment heads-ups.
+   Each player's latest submission on a day counts, and a "Yes" there is a
+   request for the NEXT day — no time slot, the physio follows up.
+   -> { slug: {for, name} } for requests made on dateISO */
+const PRAC_COLS=["timestamp","date","slug","name","session","start_time","duration_min","rpe","treatment","treatment_for"];
+function practiceRequests(rows, dateISO){
+  rows=(rows||[]).filter(r=>r.some(c=>String(c==null?"":c).trim()!==""));
+  if(rows.length<2) return {};
+  const head=rows[0].map(h=>String(h).toLowerCase().replace(/[^a-z_]/g,""));
+  const ix={}; PRAC_COLS.forEach((n,k)=>{const i=head.indexOf(n); ix[n]=i>=0?i:k;});
+  const g=(r,n)=>String(r[ix[n]]==null?"":r[ix[n]]).trim();
+  const latest={};
+  rows.slice(1).forEach(r=>{
+    const s=g(r,"slug").toLowerCase();
+    if(!s||s==="slug"||/^test-/.test(s)||g(r,"date").slice(0,10)!==dateISO) return;   /* test-… = test account */
+    const ts=g(r,"timestamp");
+    if(!latest[s]||ts>=latest[s].ts) latest[s]={ts, yes:/^yes$/i.test(g(r,"treatment")), for:g(r,"treatment_for"), name:g(r,"name")};
+  });
+  const out={}; Object.keys(latest).forEach(s=>{ if(latest[s].yes) out[s]={for:latest[s].for, name:latest[s].name}; });
+  return out;
+}
+function isoAddDays(iso,n){const p=iso.split("-");const d=new Date(+p[0],+p[1]-1,+p[2]+n);const z=x=>(x<10?"0":"")+x;return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());}
+
+/* treatment asked for after practice: yesterday's (for today) and today's (for tomorrow) */
+async function loadPracticeRequests(){
+  const url="https://docs.google.com/spreadsheets/d/"+WELL_SHEET_ID+
+    "/gviz/tq?tqx=out:csv&headers=0&sheet="+encodeURIComponent("PRACTICE LOG")+"&cachebust="+Date.now();
+  const res=await fetch(url); if(!res.ok) return {today:{},tomorrow:{}};
+  const rows=SC.parseCSV(await res.text()), t=SC.todayISO();
+  return {today:practiceRequests(rows,isoAddDays(t,-1)), tomorrow:practiceRequests(rows,t)};
+}
+
+/* -> { slug: { yes, time:"HH:MM"|"", note, name, ahead } } — today's check-ins,
+   plus anyone who asked after yesterday's practice (a later "No" on the
+   morning check-in doesn't cancel that) */
 async function loadTreatmentToday(){
+  const [well, prac]=await Promise.all([loadTreatmentWell(), loadPracticeRequests().catch(e=>{console.error(e);return {today:{},tomorrow:{}};})]);
+  Object.keys(prac.today).forEach(s=>{ const r=prac.today[s];
+    well[s]=Object.assign({time:"", note:"", name:r.name}, well[s]||{}, {yes:true, ahead:r.for||""}); });
+  Object.defineProperty(well,"__tomorrow",{value:prac.tomorrow,enumerable:false});
+  return well;
+}
+async function loadTreatmentWell(){
   const url="https://docs.google.com/spreadsheets/d/"+WELL_SHEET_ID+
     "/gviz/tq?tqx=out:csv&headers=0&sheet="+encodeURIComponent("WELLNESS LOG")+"&cachebust="+Date.now();
   const res=await fetch(url);
@@ -359,28 +402,38 @@ function renderTreatment(treat, roster){
   /* booked times first, earliest first; then players with no time, by name */
   list.sort((a,b)=>(a.b.time?0:1)-(b.b.time?0:1) || a.b.time.localeCompare(b.b.time) || a.p.name.localeCompare(b.p.name));
 
-  const timed=list.filter(x=>x.b.time).length, untimed=list.length-timed;
+  const ahead=list.filter(x=>x.b.ahead!==undefined).length;
   hint.textContent=list.length
-    ? [timed?timed+" booked":"", untimed?untimed+" with no time":""].filter(Boolean).join(" · ")
-    : "Booked on today's check-in";
+    ? [list.length+" asked for treatment", ahead?ahead+" after yesterday's practice":""].filter(Boolean).join(" · ")
+    : "Asked for after practice or on today's check-in";
+  /* already asked for tomorrow, on today's post-practice check-in */
+  const tom=treat.v.__tomorrow||{};
+  const tomList=Object.keys(tom).filter(s=>!roster||bySlug[s]).map(s=>({p:bySlug[s]||{slug:s,name:tom[s].name||s}, why:tom[s].for}))
+    .sort((a,b)=>a.p.name.localeCompare(b.p.name));
+  const tomBlock=tomList.length?el("div",{class:"treat-tom"},[
+    el("div",{class:"treat-tom-h",text:"Already asked for tomorrow"}),
+    el("div",{class:"treat-tom-list",text:tomList.map(x=>x.p.name+(x.why?" ("+x.why+")":"")).join(" · ")})]):null;
   if(!list.length){
-    body.appendChild(el("div",{class:"empty",style:"border:0",text:"No treatment requested on today's check-ins."}));
+    body.appendChild(el("div",{class:"empty",style:"border:0",text:"Nobody has asked for treatment today."}));
+    if(tomBlock) body.appendChild(tomBlock);
     return;
   }
   const grid=el("div",{class:"treat-list"});
   list.forEach(x=>{
     const p=x.p;
     grid.appendChild(el("div",{class:"treat-row"},[
-      x.b.time ? el("div",{class:"treat-time",text:x.b.time}) : el("div",{class:"treat-time none",text:"No time booked"}),
+      x.b.time ? el("div",{class:"treat-time",text:x.b.time}) : el("div",{class:"treat-time none",text:x.b.ahead!==undefined?"After practice":"This morning"}),
       playerLink(p,[ SC.avatar(p),
         el("div",{class:"treat-who"},[
           el("div",{class:"p-name",text:p.name}),
           el("div",{class:"p-sub",text:[p.pos, p.num!==""?"#"+p.num:""].filter(Boolean).join(" · ")}),
+          x.b.ahead ? el("div",{class:"note",title:x.b.ahead,text:"⚕ “"+x.b.ahead+"”"}) : null,
           x.b.note ? el("div",{class:"note",title:x.b.note,text:"“"+x.b.note+"”"}) : null
         ]) ], "treat-who-link")
     ]));
   });
   body.appendChild(grid);
+  if(tomBlock) body.appendChild(tomBlock);
 }
 
 /* ============================================================
