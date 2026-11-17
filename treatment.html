@@ -566,7 +566,7 @@ async function loadRoster(){
     return (hasHeader?rows.slice(1):rows).map(r=>({
       slug:(r[col.slug]||"").toLowerCase().trim(), name:r[col.name]||"", num:r[col.number]||"", pos:r[col.position]||"",
       active:String(r[col.active]||"TRUE").toUpperCase()!=="FALSE"
-    })).filter(p=>p.slug&&p.slug!=="slug"&&p.active).sort((a,b)=>a.name.localeCompare(b.name));
+    })).filter(p=>p.slug&&p.slug!=="slug"&&p.active&&!/^test-/.test(p.slug)).sort((a,b)=>a.name.localeCompare(b.name));
   }catch(e){
     console.error("ROSTER tab unreachable:",e);
     return [];
@@ -602,7 +602,7 @@ async function loadWellness(){
     const at={}; WELL_COLS.forEach((k,n)=>{const f=head.indexOf(k); at[k]=f>=0?f:n;});
     const get=(r,k)=>(r[at[k]]===undefined?"":String(r[at[k]])).trim();
     WELL_ROWS=raw.slice(1).map(r=>({date:get(r,"date").slice(0,10),slug:get(r,"slug").toLowerCase(),name:get(r,"name"),
-      yes:/^(yes|true|y)$/i.test(get(r,"treatment")),time:hhmm(get(r,"treatment_time"))})).filter(r=>r.slug&&r.slug!=="slug");
+      yes:/^(yes|true|y)$/i.test(get(r,"treatment")),time:hhmm(get(r,"treatment_time"))})).filter(r=>r.slug&&r.slug!=="slug"&&!/^test-/.test(r.slug));
   }catch(e){ console.error("WELLNESS LOG unreachable:",e); WELL_OK=false; WELL_ROWS=[]; }
 }
 function bookingsFor(day){

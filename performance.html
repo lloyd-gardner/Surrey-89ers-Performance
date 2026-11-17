@@ -1147,7 +1147,7 @@ async function loadRoster(){
     return (hasHeader?rows.slice(1):rows).map(r=>({
       slug:(r[col.slug]||"").toLowerCase().trim(), name:r[col.name]||"", num:r[col.number]||"", pos:r[col.position]||"",
       active:String(r[col.active]||"TRUE").toUpperCase()!=="FALSE"
-    })).filter(p=>p.slug&&p.slug!=="slug"&&p.active).sort((a,b)=>a.name.localeCompare(b.name));
+    })).filter(p=>p.slug&&p.slug!=="slug"&&p.active&&!/^test-/.test(p.slug)).sort((a,b)=>a.name.localeCompare(b.name));
   }catch(e){
     console.error("ROSTER tab unreachable:",e);
     return [];

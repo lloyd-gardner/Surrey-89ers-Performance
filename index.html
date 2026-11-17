@@ -310,7 +310,7 @@ async function loadTreatmentToday(){
   const today=SC.todayISO(), out={};
   raw.slice(1).forEach(r=>{                       /* rows are in time order: later rows overwrite */
     const slug=get(r,"slug").toLowerCase();
-    if(!slug || slug==="slug" || get(r,"date").slice(0,10)!==today) return;
+    if(!slug || slug==="slug" || /^test-/.test(slug) || get(r,"date").slice(0,10)!==today) return;   /* test-… = test account */
     out[slug]={ yes:/^(yes|true|y)$/i.test(get(r,"treatment")), time:hhmm(get(r,"treatment_time")),
                 note:get(r,"note"), name:get(r,"name") };
   });

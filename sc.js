@@ -127,7 +127,7 @@
         group: /guard/i.test(pos) ? "G" : /forward|wing/i.test(pos) ? "F" : /big|cent/i.test(pos) ? "B" : "",
         active: String(r[col.active] || "TRUE").toUpperCase() !== "FALSE"
       };
-    }).filter(function (p) { return p.slug && p.slug !== "slug" && p.active; });
+    }).filter(function (p) { return p.slug && p.slug !== "slug" && p.active && !/^test-/.test(p.slug); });  /* test-… slugs: test accounts, portal only */
   }
 
   /* ---------- player status data (dashboard) ----------
@@ -166,7 +166,7 @@
       return o;
     }).filter(function (o) {
       o.date = o.date.slice(0, 10);
-      return o.slug && o.slug !== "slug" && /^\d{4}-\d{2}-\d{2}$/.test(o.date);
+      return o.slug && o.slug !== "slug" && !/^test-/.test(o.slug) && /^\d{4}-\d{2}-\d{2}$/.test(o.date);
     });
   }
 
